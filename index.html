@@ -677,7 +677,7 @@
                 <tbody id="userTbody"></tbody>
               </table>
             </div>
-            <div class="hint">※ 이 페이지는 Supabase Auth + profiles 테이블 기반입니다.</div>
+            <div class="hint">※ 이 페이지는 Supabase Auth + profiles 테이블 기반입니다. (호환: app_users 있으면 자동 fallback)</div>
           </div>
         </div>
       </div>
@@ -757,14 +757,18 @@
      * 0) Supabase 연결값
      ***********************/
     const SUPABASE_URL = "https://wavosfsnwwrcmcsgvlho.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhdm9zZnNud3dyY21jc2d2bGhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjgwNjEsImV4cCI6MjA4NTkwNDA2MX0.5hh7b9u12aCDTuGtjQycVzBEkplnotDvLkmt5DmJ8eU"; // 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhdm9zZnNud3dyY21jc2d2bGhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjgwNjEsImV4cCI6MjA4NTkwNDA2MX0.5hh7b9u12aCDTuGtjQycVzBEkplnotDvLkmt5DmJ8eU";
 
     // ✅ 로그인ID를 이메일로 매핑 (username@square.local)
     const EMAIL_DOMAIN = "square.local";
 
     // ✅ 마스터 계정 고정
     const MASTER_ID = "syl17300";
-    const MASTER_PW = "rnjsalstn12@"; // 참고용(서버에 저장된 pw와 일치해야 로그인됨)
+
+    // ✅ 프로필 테이블 기본값(메인)
+    const PROFILE_TABLE_PRIMARY = "profiles";
+    // ✅ 호환 테이블(있으면 자동 사용) - 없으면 무시
+    const PROFILE_TABLE_FALLBACK = "app_users";
 
     // Edge Function 이름 (너가 만든 것)
     const EDGE_CREATE_USER = "admin-create-user";
@@ -787,7 +791,7 @@
       const el = document.getElementById("toast");
       el.innerHTML = `<div>${escapeHtml(title)}</div>${sub ? `<div class="s">${escapeHtml(sub)}</div>` : ""}`;
       el.classList.add("show");
-      setTimeout(()=>el.classList.remove("show"), 2600);
+      setTimeout(()=>el.classList.remove("show"), 2800);
     }
     function fmtDT(iso){
       if(!iso) return "-";
@@ -883,29 +887,48 @@
       return !!p && p.role === "ADMIN" && p.login_id === MASTER_ID;
     }
 
-    function displayUserNameByLogin(loginId){
-      const u = usersCache.find(x => x.login_id === loginId);
-      if(!u) return loginId || "-";
-      const company = (u.company_name || "").trim();
-      return company ? `${company}(${u.login_id})` : (u.login_id || "-");
-    }
-
     /***********************
      * 3) DB 접근 함수
+     * ✅ 여기서 app_users 에러가 나도 자동 우회하도록 수정
      ***********************/
-    async function fetchMyProfile(){
-      if(!authUser) return null;
+    async function fetchProfileFromTable(tableName){
       const { data, error } = await sb
-        .from("profiles")
+        .from(tableName)
         .select("*")
         .eq("user_id", authUser.id)
         .maybeSingle();
-      if(error){
-        console.error(error);
-        toast("프로필 조회 실패", error.message);
+      return { data, error };
+    }
+
+    async function fetchMyProfile(){
+      if(!authUser) return null;
+
+      // 1) profiles 우선
+      {
+        const { data, error } = await fetchProfileFromTable(PROFILE_TABLE_PRIMARY);
+        if(!error) return data || null;
+
+        // profiles 자체가 없거나 RLS/권한 문제 등
+        console.warn("profiles load error:", error);
+        // 여기서는 바로 실패시키지 말고, fallback도 시도
+      }
+
+      // 2) fallback: app_users (있으면 사용, 없으면 무시)
+      {
+        const { data, error } = await fetchProfileFromTable(PROFILE_TABLE_FALLBACK);
+        if(!error) {
+          toast("호환 모드", "profiles 대신 app_users를 사용 중입니다.");
+          return data || null;
+        }
+
+        // app_users 테이블 없음/권한 문제라면 최종 실패
+        console.warn("app_users load error:", error);
+
+        // 에러 메시지 더 친절하게 표시
+        const msg = (error && error.message) ? error.message : "알 수 없는 오류";
+        toast("프로필 로드 실패", msg);
         return null;
       }
-      return data || null;
     }
 
     async function fetchUsersIfAdmin(){
@@ -913,13 +936,26 @@
 
       // 관리자: 전체 profiles 조회 (RLS가 admin만 허용해야 함)
       const { data, error } = await sb
-        .from("profiles")
+        .from(PROFILE_TABLE_PRIMARY)
         .select("*")
         .order("created_at", { ascending: true });
 
       if(error){
         console.error(error);
         toast("사용자 목록 조회 실패", error.message);
+
+        // profiles가 아니라 fallback만 있는 환경이면 거기도 한번 시도
+        const { data: d2, error: e2 } = await sb
+          .from(PROFILE_TABLE_FALLBACK)
+          .select("*")
+          .order("created_at", { ascending: true });
+
+        if(!e2){
+          toast("호환 모드", "사용자 목록을 app_users에서 불러옵니다.");
+          usersCache = d2 || [];
+          return;
+        }
+
         usersCache = [profile].filter(Boolean);
         return;
       }
@@ -927,7 +963,6 @@
     }
 
     async function fetchSlots(){
-      // RLS: 일반유저는 자기 slots만 내려오게 구성되어 있어야 함.
       const { data, error } = await sb
         .from("slots")
         .select("*")
@@ -943,12 +978,11 @@
     }
 
     function normalizeSlotFromDb(r){
-      // DB 컬럼명(스네이크) → UI용(카멜)
       return {
         id: r.id,
         no: r.no,
-        userId: r.login_id || r.user_login_id || r.userId || r.user_id_login || r.user_login || r.userIdLogin || r.user_loginid || r.user_login_id || r.user_id, // (혹시 DB가 login_id 대신 user_id를 쓰는 케이스 대비)
-        user_uid: r.user_id, // 실제 uuid
+        userId: r.login_id || r.user_login_id || r.userId || r.user_id_login || r.user_login || r.userIdLogin || r.user_loginid || r.user_login_id || r.user_id,
+        user_uid: r.user_id,
         type: r.type,
         startDate: r.start_date,
         endDate: r.end_date,
@@ -1040,6 +1074,7 @@
       if(!id || !pw){ toast("입력 필요","아이디/비밀번호를 입력하세요."); return; }
 
       const email = toEmail(id);
+      logEvent(`로그인 시도: ${id} → ${email}`);
 
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
       if(error){
@@ -1049,9 +1084,12 @@
       }
 
       authUser = data.user;
+
+      // ✅ 여기서 프로필을 못 읽으면 "왜 못 읽는지"를 정확히 토스트로 보여주고 signOut
       profile = await fetchMyProfile();
       if(!profile){
-        toast("프로필 없음", "profiles 테이블에 사용자 정보가 없습니다.\n(마스터/생성 로직 확인 필요)");
+        logEvent(`프로필 로드 실패: uid=${authUser?.id || "-"}`);
+        toast("프로필 없음", "Auth는 성공했지만 프로필 테이블에서 사용자를 찾지 못했습니다.\n(테이블/정책/RLS 확인 필요)");
         await sb.auth.signOut();
         authUser = null;
         return;
@@ -1162,7 +1200,6 @@
       const slots = allSlots.map(s=>({ ...s, expired: computeExpired(s) }));
       if(profile.role==="ADMIN") return slots;
       return slots.filter(s =>
-        // 일반유저는 RLS로 자기 것만 오겠지만, 혹시 대비
         (s.user_uid === authUser.id) &&
         !s.hiddenByAdmin &&
         !s.withdrawPending &&
@@ -1563,7 +1600,7 @@
     async function allocateSlots(){
       if(profile.role!=="ADMIN"){ toast("권한 없음"); return; }
 
-      const uid = document.getElementById("assign_user").value; // user uuid
+      const uid = document.getElementById("assign_user").value;
       const type = document.getElementById("assign_type").value || "스퀘어(단일)";
       const qty = parseInt(document.getElementById("assign_qty").value || "0", 10);
       const start = document.getElementById("assign_start").value;
@@ -1573,7 +1610,6 @@
       if(!qty || qty<1){ toast("수량은 1 이상"); return; }
       if(!start || !end){ toast("기간 입력 필요"); return; }
 
-      // 다음 번호 계산(현재 캐시 기준)
       const maxNo = (slotsCache || []).reduce((m,s)=>Math.max(m, s.no||0), 0);
 
       const newRows = [];
@@ -1581,7 +1617,7 @@
         newRows.push({
           id: crypto.randomUUID(),
           no: maxNo + i + 1,
-          user_id: uid,              // uuid
+          user_id: uid,
           type: type,
           start_date: start,
           end_date: end,
@@ -1638,10 +1674,8 @@
         return;
       }
 
-      // ✅ Edge Function 호출로 Auth 유저 생성 + profiles row 생성
       const body = {
         login_id, password, role, company_name,
-        // 호환용(혹시 함수가 camelCase로 받는 경우 대비)
         loginId: login_id,
         pw: password,
         companyName: company_name,
@@ -1703,8 +1737,7 @@
         return;
       }
 
-      // profiles만 수정 (Auth 이메일 변경까지 하려면 admin 권한 필요 → 여기선 단순화)
-      const { error } = await sb.from("profiles").update({
+      const { error } = await sb.from(PROFILE_TABLE_PRIMARY).update({
         login_id: loginNew,
         company_name: companyNew,
         role: roleNew
@@ -1730,7 +1763,6 @@
     }
 
     async function deleteUser(userId){
-      // Auth 유저 삭제는 service_role 필요(Edge Function으로 해야 함)
       toast("삭제 불가", "Auth 유저 삭제는 서버(Edge Function)로만 가능합니다.\n원하면 삭제용 함수도 만들어줄게.");
     }
 
@@ -1955,7 +1987,6 @@
      * 10) 최초 로딩: 세션 자동 복구
      ***********************/
     (async function init(){
-      // 세션 복구
       const { data } = await sb.auth.getSession();
       authUser = data?.session?.user || null;
       if(authUser){
@@ -1970,7 +2001,6 @@
         }
       }
 
-      // auth 상태 변화 감지(다른 탭/새로고침 안정)
       sb.auth.onAuthStateChange(async (event, session) => {
         authUser = session?.user || null;
         if(!authUser){
