@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Square | Admin Console</title>
 
+  <!-- ✅ Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root{
       --bg:#070b18;
@@ -14,7 +17,6 @@
       --text:#eef2ff;
       --muted:#a7b0d6;
 
-      /* 포인트 */
       --neon:#49b6ff;
       --neon2:#7ee3ff;
 
@@ -29,71 +31,49 @@
       --radius2: 14px;
       --focus: 0 0 0 4px rgba(73,182,255,.22);
 
-      /* ✅ 배경 이미지 (원하면 파일명만 바꾸기) */
       --bgImg: url('chip-bg.png');
     }
 
     *{box-sizing:border-box}
+    *, *::before, *::after{ animation:none !important; transition:none !important; }
 
-    /* ✅ 렉 방지: 모든 애니메이션/트랜지션 강제 OFF */
-    *, *::before, *::after{
-      animation: none !important;
-      transition: none !important;
-    }
-
-    /* ✅ 흰 여백 방지: html도 배경/높이 지정 */
-    html{
-      height:100%;
-      min-height:100%;
-      background: var(--bg);
-    }
-
+    html{height:100%; min-height:100%; background:var(--bg);}
     body{
       margin:0;
-      min-height:100vh; /* ✅ 이게 핵심(콘텐츠가 짧아도 배경이 끝까지) */
+      min-height:100vh;
       font-family:
         "Pretendard Variable","Pretendard","SUIT","Inter",
         ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
         "Apple SD Gothic Neo","Noto Sans KR", sans-serif;
 
-      /* ✅ 회로/체크무늬 배경은 유지 + 정적(움직임 없음) */
       background:
         radial-gradient(1200px 700px at 20% 10%, rgba(73,182,255,.12), transparent 60%),
         radial-gradient(900px 520px at 85% 30%, rgba(126,227,255,.10), transparent 55%),
         radial-gradient(900px 520px at 50% 120%, rgba(73,182,255,.07), transparent 60%),
-
-        /* 체크(그리드) */
         linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px),
         linear-gradient(rgba(73,182,255,.030) 1px, transparent 1px),
         linear-gradient(90deg, rgba(73,182,255,.030) 1px, transparent 1px),
-
-        /* 살짝 어둡게 덮기 + 이미지 */
         linear-gradient(rgba(6,9,22,.86), rgba(6,9,22,.86)),
         var(--bgImg);
 
       background-size:
         auto, auto, auto,
-        64px 64px,
-        64px 64px,
-        16px 16px,
-        16px 16px,
-        auto,
-        cover;
+        64px 64px, 64px 64px,
+        16px 16px, 16px 16px,
+        auto, cover;
 
       background-position:
         center, center, center,
         0 0, 0 0,
         0 0, 0 0,
-        center,
-        center;
+        center, center;
 
       background-repeat:
         no-repeat, no-repeat, no-repeat,
         repeat, repeat,
         repeat, repeat,
-        no-repeat,
-        no-repeat;
+        no-repeat, no-repeat;
 
       color:var(--text);
       letter-spacing:-.2px;
@@ -101,7 +81,6 @@
     }
 
     a{color:inherit;text-decoration:none}
-
     .wrap{max-width:1440px;margin:0 auto;padding:24px}
 
     .topbar{
@@ -116,35 +95,23 @@
       display:flex;align-items:center;justify-content:space-between;gap:16px;
     }
 
-    .brand{
-      display:flex;align-items:center;gap:12px;
-      font-weight:1000;letter-spacing:.25px;
-      white-space:nowrap;
-    }
+    .brand{display:flex;align-items:center;gap:12px;font-weight:1000;letter-spacing:.25px;white-space:nowrap;}
     .logoMark{
       width:40px;height:40px;border-radius:14px;
       background: linear-gradient(135deg, rgba(73,182,255,.95), rgba(126,227,255,.9));
       box-shadow: 0 12px 28px rgba(73,182,255,.18);
-      position:relative;
-      flex:0 0 auto;
-      overflow:hidden;
+      position:relative;flex:0 0 auto;overflow:hidden;
     }
     .logoMark:before{
-      content:"";
-      position:absolute;inset:-2px;
+      content:"";position:absolute;inset:-2px;
       background:
         radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.45), transparent 55%),
         radial-gradient(22px 22px at 70% 70%, rgba(0,0,0,.18), transparent 60%);
-      mix-blend-mode: overlay;
-      opacity:.9;
+      mix-blend-mode: overlay;opacity:.9;
     }
     .logoMark:after{
-      content:"S";
-      position:absolute;inset:0;
-      display:grid;place-items:center;
-      color:#081024;font-weight:1200;
-      font-size:18px;
-      letter-spacing:.2px;
+      content:"S";position:absolute;inset:0;display:grid;place-items:center;
+      color:#081024;font-weight:1200;font-size:18px;letter-spacing:.2px;
       text-shadow: 0 1px 0 rgba(255,255,255,.15);
     }
 
@@ -152,11 +119,7 @@
     .brandTitle .t1{font-size:16px;color:rgba(255,255,255,.92)}
     .brandTitle .t2{font-size:13px;color:var(--muted);font-weight:800}
 
-    .userBox{
-      display:flex;align-items:center;gap:10px;
-      color:var(--muted);font-size:14px;
-      white-space:nowrap;
-    }
+    .userBox{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;white-space:nowrap;}
     .pill{
       display:inline-flex;align-items:center;gap:10px;
       padding:10px 12px;border-radius:999px;
@@ -164,44 +127,24 @@
       background: rgba(12,16,34,.70);
       font-weight:900;
     }
-    .pill .dot{
-      width:9px;height:9px;border-radius:50%;
-      background: var(--green);
-      box-shadow: 0 0 0 5px rgba(57,217,138,.12);
-    }
+    .pill .dot{width:9px;height:9px;border-radius:50%;background: var(--green);box-shadow:0 0 0 5px rgba(57,217,138,.12);}
 
     .btn{
       border:1px solid rgba(42,47,85,.95);
       background: rgba(12,16,34,.74);
       color:var(--text);
-      padding:12px 14px;
-      border-radius:14px;
-      cursor:pointer;
-      font-weight:1000;
-      font-size:15px;
-      line-height:1;
-      white-space:nowrap;
+      padding:12px 14px;border-radius:14px;
+      cursor:pointer;font-weight:1000;font-size:15px;line-height:1;white-space:nowrap;
     }
-    .btn:active{transform:none}
-    .btn[disabled]{opacity:.55; cursor:not-allowed; transform:none}
-
+    .btn[disabled]{opacity:.55; cursor:not-allowed;}
     .btnNeon{
       background: linear-gradient(135deg, rgba(73,182,255,.95), rgba(126,227,255,.92));
       border: 1px solid rgba(73,182,255,.45);
-      color:#061026;
-      font-weight:1100;
+      color:#061026;font-weight:1100;
       box-shadow: 0 10px 26px rgba(73,182,255,.18);
     }
-    .btnRed{
-      border:1px solid rgba(255,92,92,.35);
-      background: rgba(255,92,92,.10);
-      color: #ffd6d6;
-    }
-    .btnGreen{
-      border:1px solid rgba(57,217,138,.35);
-      background: rgba(57,217,138,.10);
-      color: #d7fff0;
-    }
+    .btnRed{border:1px solid rgba(255,92,92,.35);background: rgba(255,92,92,.10);color:#ffd6d6;}
+    .btnGreen{border:1px solid rgba(57,217,138,.35);background: rgba(57,217,138,.10);color:#d7fff0;}
     .mini{padding:10px 12px;border-radius:12px;font-size:14px}
 
     .nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
@@ -210,10 +153,7 @@
       border:1px solid rgba(42,47,85,.88);
       background: rgba(12,16,34,.55);
       color: var(--muted);
-      font-weight:1100;
-      cursor:pointer;
-      font-size:14px;
-      white-space:nowrap;
+      font-weight:1100;cursor:pointer;font-size:14px;white-space:nowrap;
     }
     .tab.active{
       color: var(--text);
@@ -239,19 +179,12 @@
     }
     .cardHeader .h{display:flex;flex-direction:column;gap:6px;min-width:260px}
     .cardHeader .h .title{
-      font-size:20px;
-      font-weight:1300;
-      letter-spacing:.1px;
+      font-size:20px;font-weight:1300;letter-spacing:.1px;
       color: rgba(255,255,255,.95);
       text-shadow: 0 0 18px rgba(73,182,255,.16);
       white-space:nowrap;
     }
-    .cardHeader .h .sub{
-      font-size:14px;
-      color:rgba(233,233,255,.90);
-      font-weight:1100;
-      white-space:nowrap;
-    }
+    .cardHeader .h .sub{font-size:14px;color:rgba(233,233,255,.90);font-weight:1100;white-space:nowrap}
     .cardBody{padding:18px}
 
     .row{display:flex;gap:14px;flex-wrap:wrap}
@@ -259,44 +192,28 @@
     .label{font-size:13px;color:var(--muted);font-weight:1000;margin-bottom:9px;white-space:nowrap}
     .input, select, textarea{
       width:100%;
-      padding:13px 14px;
-      border-radius:14px;
+      padding:13px 14px;border-radius:14px;
       border:1px solid rgba(42,47,85,.95);
       background: rgba(6,10,24,.72);
       color:var(--text);
-      outline:none;
-      font-weight:900;
-      font-size:15px;
+      outline:none;font-weight:900;font-size:15px;
     }
     .input:focus, select:focus, textarea:focus{box-shadow: var(--focus); border-color: rgba(73,182,255,.55)}
     textarea{min-height:92px;resize:vertical}
     .hint{font-size:13px;color:var(--muted);margin-top:9px;line-height:1.6;font-weight:800}
     .hr{height:1px;background: rgba(42,47,85,.65); margin:16px 0}
 
-    .rightActions{
-      display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center;
-    }
-
+    .rightActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center;}
     table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     thead th{
-      text-align:left;
-      font-size:12px;
-      color: var(--muted);
-      font-weight:1200;
-      padding:14px 14px;
-      border-bottom: 1px solid rgba(42,47,85,.78);
+      text-align:left;font-size:12px;color: var(--muted);font-weight:1200;
+      padding:14px 14px;border-bottom: 1px solid rgba(42,47,85,.78);
       background: rgba(8,12,28,.70);
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      white-space:nowrap;
+      position: sticky;top: 0;z-index: 2;white-space:nowrap;
     }
     tbody td{
-      padding:14px 14px;
-      border-bottom: 1px solid rgba(42,47,85,.55);
-      vertical-align:middle;
-      white-space:nowrap;
-      font-weight:900;
+      padding:14px 14px;border-bottom: 1px solid rgba(42,47,85,.55);
+      vertical-align:middle;white-space:nowrap;font-weight:900;
     }
     tbody tr:hover{background: rgba(73,182,255,.06)}
 
@@ -306,10 +223,7 @@
       border:1px solid rgba(42,47,85,.95);
       background: rgba(6,10,24,.72);
       color: var(--text);
-      font-weight:1200;
-      white-space:nowrap;
-      font-size:13px;
-      line-height:1;
+      font-weight:1200;white-space:nowrap;font-size:13px;line-height:1;
     }
     .tag.gold{border-color: rgba(73,182,255,.55); color: rgba(255,255,255,.94)}
     .tag.gray{border-color: rgba(143,147,168,.35); color: #cfd2e2}
@@ -323,12 +237,7 @@
       .kpi{grid-template-columns: repeat(2,1fr)}
       .topbar-inner{flex-wrap:wrap;justify-content:center}
     }
-    .kpi .box{
-      border:1px solid rgba(42,47,85,.9);
-      background: rgba(6,10,24,.55);
-      border-radius: 14px;
-      padding:16px;
-    }
+    .kpi .box{border:1px solid rgba(42,47,85,.9);background: rgba(6,10,24,.55);border-radius: 14px;padding:16px;}
     .kpi .box .v{font-size:20px;font-weight:1200;color:var(--text);white-space:nowrap}
     .kpi .box .k{font-size:13px;color:var(--muted);font-weight:1000;margin-top:7px;white-space:nowrap}
     .foot{padding:14px 24px;color:var(--muted);font-size:12px;text-align:center;opacity:.9}
@@ -351,31 +260,20 @@
     }
     .loginTop .t{display:flex;flex-direction:column;gap:4px}
     .loginTop .t .a{
-      font-weight:1300;
-      color:rgba(255,255,255,.95);
-      font-size:28px;
-      letter-spacing:.2px;
-      white-space:nowrap;
+      font-weight:1300;color:rgba(255,255,255,.95);
+      font-size:28px;letter-spacing:.2px;white-space:nowrap;
       text-shadow: 0 0 18px rgba(73,182,255,.20);
     }
-    .loginTop .t .b{display:none}
     .loginBody{padding:20px}
 
     .toast{
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      z-index: 100;
-      padding: 14px 16px;
-      border-radius: 16px;
+      position: fixed;right: 16px;bottom: 16px;z-index: 100;
+      padding: 14px 16px;border-radius: 16px;
       border:1px solid rgba(42,47,85,.9);
       background: rgba(10,14,32,.92);
       box-shadow: var(--shadow);
-      color: var(--text);
-      font-weight:1000;
-      display:none;
-      max-width: 560px;
-      backdrop-filter: blur(12px);
+      color: var(--text);font-weight:1000;
+      display:none;max-width: 560px;backdrop-filter: blur(12px);
     }
     .toast.show{display:block}
     .toast .s{color:var(--muted);font-weight:900;font-size:13px;margin-top:7px}
@@ -390,49 +288,21 @@
     .tInput{
       width:100%;
       min-width: 220px;
-      padding:12px 12px;
-      border-radius:12px;
+      padding:12px 12px;border-radius:12px;
       border:1px solid rgba(42,47,85,.95);
       background: rgba(6,10,24,.72);
       color:var(--text);
-      outline:none;
-      font-weight:900;
-      font-size:14px;
+      outline:none;font-weight:900;font-size:14px;
     }
     .tInput:focus{box-shadow: var(--focus); border-color: rgba(73,182,255,.55)}
 
-    .colLink{
-      max-width:240px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      display:inline-block;
-      vertical-align:bottom;
-    }
-
-    .chk{
-      width:18px;height:18px;
-      accent-color: var(--neon);
-      cursor:pointer;
-      transform: translateY(2px);
-    }
-    .actionBar{
-      display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;
-    }
-
+    .colLink{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom;}
+    .chk{width:18px;height:18px;accent-color: var(--neon);cursor:pointer;transform: translateY(2px);}
+    .actionBar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
     .expSoon{ color: var(--red) !important; font-weight:1400 !important; }
-
     .linkCell{ white-space:normal !important; line-height:1.35; font-weight:900; }
     .linkCell .k{color:var(--muted);font-weight:1000;font-size:12px;margin-right:6px}
-    .linkCell .v{
-      display:inline-block;
-      max-width:240px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      vertical-align:bottom;
-      white-space:nowrap;
-    }
-
+    .linkCell .v{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;white-space:nowrap;}
     .twoInputs{ display:flex; flex-direction:column; gap:10px; min-width:240px; }
   </style>
 </head>
@@ -444,7 +314,6 @@
         <div class="logoMark" aria-hidden="true"></div>
         <div class="t">
           <div class="a">Square</div>
-          <div class="b"></div>
         </div>
       </div>
       <div class="loginBody">
@@ -462,6 +331,9 @@
         </div>
         <div class="row" style="justify-content:flex-end;align-items:center">
           <button class="btn btnNeon" onclick="login()">로그인</button>
+        </div>
+        <div class="hint" style="margin-top:12px">
+          ✅ 이제부터 로그인/계정/슬롯은 <b>Supabase</b>에 저장됩니다 (다른 PC/시크릿도 동일).
         </div>
       </div>
     </div>
@@ -499,7 +371,8 @@
               <div class="sub">슬롯 운영 현황</div>
             </div>
             <div class="rightActions">
-              <button class="btn mini" onclick="seedDemoData()">데모 데이터 넣기</button>
+              <button class="btn mini" onclick="seedDemoData()" style="display:none">데모 데이터 넣기</button>
+              <button class="btn mini" onclick="refresh()">새로고침</button>
             </div>
           </div>
           <div class="cardBody">
@@ -567,10 +440,6 @@
               </thead>
               <tbody id="slotTbody"></tbody>
             </table>
-          </div>
-
-          <div class="cardBody">
-            <div class="smallNote" style="display:none"></div>
           </div>
         </div>
       </div>
@@ -674,64 +543,17 @@
                     <th style="width:260px">아이디</th>
                     <th style="width:180px">역할</th>
                     <th>업체명</th>
-                    <th style="width:240px">비밀번호</th>
-                    <th style="width:220px">수정</th>
-                    <th style="width:160px">삭제</th>
+                    <th style="width:220px">상태</th>
+                    <th style="width:220px">관리</th>
                   </tr>
                 </thead>
                 <tbody id="userTbody"></tbody>
               </table>
             </div>
-            <div class="hint">※ 아이디를 변경하면 해당 사용자의 슬롯(userId)도 함께 변경됩니다. (마스터 계정은 삭제/변경 불가)</div>
-          </div>
-        </div>
-      </div>
-
-      <div id="page_cleanup" class="grid" style="display:none">
-        <div class="card">
-          <div class="cardHeader">
-            <div class="h">
-              <div class="title">슬롯 삭제</div>
-              <div class="sub">철회 대기 슬롯만 표시</div>
+            <div class="hint">
+              ※ Supabase Auth 기반이라 “비밀번호”를 리스트에 표시하지 않습니다(보안/정책상 권장).<br/>
+              ※ 비번 변경은 추후 “비번 재설정 버튼(Edge Function)”으로 붙여드릴 수 있어요.
             </div>
-
-            <div class="rightActions">
-              <div class="actionBar" id="cleanBulkBar"></div>
-              <button class="btn mini" onclick="renderCleanup()">새로고침</button>
-            </div>
-          </div>
-
-          <div class="cardBody">
-            <div class="row">
-              <div class="field" style="min-width:260px">
-                <div class="label">검색</div>
-                <input id="cleanSearch" class="input" placeholder="사용자ID / 키워드 / 링크 일부 / 스토어ID" oninput="renderCleanup()" />
-              </div>
-              <div class="field" style="min-width:220px">
-                <div class="label">사용자</div>
-                <select id="cleanUser" onchange="renderCleanup()"></select>
-              </div>
-            </div>
-          </div>
-
-          <div class="tableScroll">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:52px">선택</th>
-                  <th style="width:80px">번호</th>
-                  <th style="width:260px">사용자</th>
-                  <th style="width:110px">타입</th>
-                  <th style="width:200px">스토어ID</th>
-                  <th style="width:130px">상태</th>
-                  <th>키워드</th>
-                  <th style="width:240px">링크</th>
-                  <th>메모</th>
-                  <th style="width:150px">삭제</th>
-                </tr>
-              </thead>
-              <tbody id="cleanTbody"></tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -741,7 +563,7 @@
           <div class="cardHeader">
             <div class="h">
               <div class="title">로그</div>
-              <div class="sub">최근 동작 로그</div>
+              <div class="sub">최근 동작 로그(로컬 표시)</div>
             </div>
           </div>
           <div class="cardBody">
@@ -750,43 +572,36 @@
         </div>
       </div>
 
-      <div class="foot">© Square Admin Console (단일 HTML · 로컬스토리지 기반 데모)</div>
+      <div class="foot">© Square Admin Console (Supabase Auth+DB)</div>
     </div>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <script>
-    const LS_USERS   = "vujade_users_v8";
-    const LS_SLOTS   = "vujade_slots_v8";
-    const LS_SESSION = "vujade_session_v8";
-    const LS_LOGS    = "vujade_logs_v8";
+    /******************************************************************
+     * ✅ Supabase 설정 (여기 2개만 반드시 넣어줘!)
+     ******************************************************************/
+    const SUPABASE_URL = "https://wavosfsnwwrcmcsgvlho.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhdm9zZnNud3dyY21jc2d2bGhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjgwNjEsImV4cCI6MjA4NTkwNDA2MX0.5hh7b9u12aCDTuGtjQycVzBEkplnotDvLkmt5DmJ8eU";
 
-    /* ✅ 마스터 계정 고정 (요청값) */
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    /******************************************************************
+     * ✅ 테이블명 (Supabase에 이 이름으로 만들어져 있어야 함)
+     ******************************************************************/
+    const T_USERS = "app_users"; // columns: id(text pk), uid(uuid), role(text), company_name(text), created_at(timestamptz)
+    const T_SLOTS = "app_slots"; // columns: id(text pk), no(int), user_id(text), type(text), start_date(date), end_date(date), opened(bool), saved(bool), hidden_by_admin(bool), withdraw_pending(bool), keyword(text), link(text), catalog_link(text), memo(text), store_id(text), created_at(timestamptz)
+
+    /******************************************************************
+     * ✅ 마스터 계정 (아이디/비번은 Supabase Auth에 실제로 존재해야 함)
+     ******************************************************************/
     const MASTER_ID = "syl17300";
     const MASTER_PW = "rnjsalstn12@";
 
-    const selectedSlotIds  = new Set();
-    const selectedCleanIds = new Set();
-
-    const editingSlotIds = new Set();
-    const slotDrafts = new Map();
-
-    const editingUserIds = new Set();
-    const userDrafts = new Map();
-
-    const TYPE_DISPLAY_MAP = {
-      "리워드(단일)": "스퀘어(단일)",
-      "리워드(원부)": "스퀘어(원부)",
-      "리워드1": "스퀘어(단일)",
-      "리워드2": "스퀘어(원부)"
-    };
-    function typeDisplay(v){
-      const t = (v || "").trim();
-      return TYPE_DISPLAY_MAP[t] || t || "스퀘어(단일)";
-    }
-    function isTypeWonbu(typeVal){ return typeDisplay(typeVal).includes("원부"); }
-
+    /******************************************************************
+     * ✅ 유틸
+     ******************************************************************/
     function nowISO(){ return new Date().toISOString(); }
     function escapeHtml(s){
       return (s ?? "").toString()
@@ -812,26 +627,21 @@
       const mi = String(d.getMinutes()).padStart(2,"0");
       return `${yy}-${mm}-${dd} ${hh}:${mi}`;
     }
-
-    function getUsers(){
-      const raw = localStorage.getItem(LS_USERS);
-      try{ return raw ? JSON.parse(raw) : [] } catch { return [] }
+    function toEmail(id){
+      // 아이디를 이메일로 변환(로그인용)
+      const clean = (id || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+      return `${clean}@square.local`;
     }
-    function setUsers(v){ localStorage.setItem(LS_USERS, JSON.stringify(v)); }
 
-    function getSlots(){
-      const raw = localStorage.getItem(LS_SLOTS);
-      try{ return raw ? JSON.parse(raw) : [] } catch { return [] }
-    }
-    function setSlots(v){ localStorage.setItem(LS_SLOTS, JSON.stringify(v)); }
+    const ROLE_LABEL = {
+      "ADMIN":"관리자",
+      "ADVERTISER":"광고주",
+      "AGENCY":"대행사",
+      "DISTRIBUTOR":"총판사"
+    };
 
-    function getSession(){
-      const raw = localStorage.getItem(LS_SESSION);
-      try{ return raw ? JSON.parse(raw) : null } catch { return null }
-    }
-    function setSession(v){ localStorage.setItem(LS_SESSION, JSON.stringify(v)); }
-    function clearSession(){ localStorage.removeItem(LS_SESSION); }
-
+    // 로컬 로그(간단)
+    const LS_LOGS = "square_logs_v1";
     function logEvent(msg){
       const raw = localStorage.getItem(LS_LOGS);
       let arr = [];
@@ -845,99 +655,135 @@
       try{ return raw ? JSON.parse(raw) : [] } catch { return [] }
     }
 
-    const ROLE_LABEL = {
-      "ADMIN":"관리자",
-      "ADVERTISER":"광고주",
-      "AGENCY":"대행사",
-      "DISTRIBUTOR":"총판사"
+    /******************************************************************
+     * ✅ 앱 상태(메모리 캐시)
+     ******************************************************************/
+    let current = { id:"", role:"", companyName:"", uid:null };
+    let usersCache = []; // {id, role, company_name}
+    let slotsCache = []; // slots rows
+    let activePage = "dash";
+
+    const selectedSlotIds = new Set();
+    const editingSlotIds = new Set();
+    const slotDrafts = new Map();
+
+    const TYPE_DISPLAY_MAP = {
+      "리워드(단일)": "스퀘어(단일)",
+      "리워드(원부)": "스퀘어(원부)",
+      "리워드1": "스퀘어(단일)",
+      "리워드2": "스퀘어(원부)"
     };
+    function typeDisplay(v){
+      const t = (v || "").trim();
+      return TYPE_DISPLAY_MAP[t] || t || "스퀘어(단일)";
+    }
+    function isTypeWonbu(typeVal){ return typeDisplay(typeVal).includes("원부"); }
 
-    function isMasterAccount(u){
-      return !!u && u.role === "ADMIN" && u.id === MASTER_ID;
+    function isMasterAccount(){
+      return current.role === "ADMIN" && current.id === MASTER_ID;
+    }
+    function displayUserName(userId){
+      const u = usersCache.find(x=>x.id===userId);
+      const company = (u?.company_name || "").trim();
+      if(company) return `${company}(${userId})`;
+      return userId || "-";
     }
 
-    function ensureSeed(){
-      let users = getUsers();
+    /******************************************************************
+     * ✅ Supabase 로드 함수들
+     ******************************************************************/
+    async function fetchMyProfile(){
+      const { data: sess } = await sb.auth.getSession();
+      const session = sess?.session;
+      if(!session) return null;
 
-      if(users.length === 0){
-        users = [
-          { id: MASTER_ID, pw: MASTER_PW, role: "ADMIN", companyName: "Square", isMaster: true, createdAt: nowISO() }
-        ];
-        setUsers(users);
-        setSlots([]);
-        logEvent(`시스템 초기화: 마스터 계정 생성(${MASTER_ID})`);
-      } else {
-        // ✅ 마스터 계정은 항상 존재 + 비번 고정
-        const idx = users.findIndex(u => u.id === MASTER_ID && u.role === "ADMIN");
-        if(idx < 0){
-          users.unshift({ id: MASTER_ID, pw: MASTER_PW, role: "ADMIN", companyName: "Square", isMaster: true, createdAt: nowISO() });
-          setUsers(users);
-          logEvent(`마스터 계정 복구: ${MASTER_ID}`);
-        } else {
-          users[idx] = { ...users[idx], pw: MASTER_PW, isMaster: true };
-          setUsers(users);
-        }
+      // email -> id 복원: (clean)@square.local
+      const email = (session.user?.email || "").toLowerCase();
+      const id = email.endsWith("@square.local") ? email.replace("@square.local","") : email;
+
+      // 프로필 로드(없으면 생성 시도)
+      const { data, error } = await sb.from(T_USERS).select("*").eq("id", id).maybeSingle();
+      if(error){
+        console.error(error);
+        throw new Error("프로필 로드 실패: " + error.message);
       }
 
-      const slots = getSlots();
-      let touched = false;
-      for(const s of slots){
-        if(s.catalogLink === undefined){
-          s.catalogLink = "";
-          touched = true;
+      if(!data){
+        // 마스터가 최초 로그인하면 프로필 자동 생성(ADMIN)
+        if(id === MASTER_ID){
+          const ins = {
+            id,
+            uid: session.user.id,
+            role: "ADMIN",
+            company_name: "Square",
+            created_at: nowISO()
+          };
+          const r = await sb.from(T_USERS).insert(ins);
+          if(r.error){
+            console.error(r.error);
+            throw new Error("마스터 프로필 생성 실패: " + r.error.message);
+          }
+          return { ...ins };
         }
+
+        // 일반 계정은 Edge Function으로 생성된 프로필이 있어야 정상
+        throw new Error("프로필이 없습니다. (관리자에게 계정 생성을 요청하세요)");
       }
-      if(touched) setSlots(slots);
+
+      return data;
     }
 
+    async function loadUsers(){
+      // ADMIN만 전체 유저 조회
+      if(current.role !== "ADMIN"){
+        usersCache = [ { id: current.id, role: current.role, company_name: current.companyName } ];
+        return;
+      }
+      const { data, error } = await sb.from(T_USERS).select("id, role, company_name, created_at").order("created_at",{ascending:true});
+      if(error){ console.error(error); throw new Error("사용자 목록 로드 실패: " + error.message); }
+      usersCache = data || [];
+    }
+
+    async function loadSlots(){
+      if(current.role === "ADMIN"){
+        const { data, error } = await sb.from(T_SLOTS).select("*").order("no",{ascending:true});
+        if(error){ console.error(error); throw new Error("슬롯 로드 실패: " + error.message); }
+        slotsCache = data || [];
+        return;
+      }
+      // 사용자: 본인 슬롯만
+      const { data, error } = await sb.from(T_SLOTS).select("*").eq("user_id", current.id).order("no",{ascending:true});
+      if(error){ console.error(error); throw new Error("슬롯 로드 실패: " + error.message); }
+      slotsCache = data || [];
+    }
+
+    /******************************************************************
+     * ✅ 네비/페이지
+     ******************************************************************/
     const PAGES = [
       { key:"dash", label:"대시보드", roles:["ADMIN","ADVERTISER","AGENCY","DISTRIBUTOR"] },
       { key:"slots", label:"슬롯관리", roles:["ADMIN","ADVERTISER","AGENCY","DISTRIBUTOR"] },
       { key:"assign", label:"슬롯부여", roles:["ADMIN"] },
       { key:"users", label:"사용자 관리", roles:["ADMIN"] },
-      { key:"cleanup", label:"슬롯 삭제", roles:["ADMIN"] },
       { key:"logs", label:"로그", roles:["ADMIN","ADVERTISER","AGENCY","DISTRIBUTOR"] },
     ];
-    let activePage = "dash";
 
-    function me(){
-      const sess = getSession();
-      if(!sess) return null;
-      return getUsers().find(u => u.id === sess.id) || null;
+    function showPage(key){
+      for(const p of PAGES){
+        const el = document.getElementById("page_"+p.key);
+        if(el) el.style.display = (p.key===key) ? "grid" : "none";
+      }
+      const allowed = PAGES.filter(p => p.roles.includes(current.role));
+      const nav = document.getElementById("navTabs");
+      [...nav.children].forEach((node, idx)=>{
+        node.classList.toggle("active", allowed[idx]?.key === key);
+      });
     }
 
-    function userMap(){
-      const m = new Map();
-      for(const u of getUsers()) m.set(u.id, u);
-      return m;
-    }
-    function displayUserName(userId){
-      const u = userMap().get(userId);
-      const company = (u?.companyName || "").trim();
-      if(company) return `${company}(${userId})`;
-      return userId || "-";
-    }
-
-    function mount(){
-      ensureSeed();
-      const sess = getSession();
-
-      document.getElementById("loginView").style.display = sess ? "none" : "grid";
-      document.getElementById("appView").style.display = sess ? "block" : "none";
-      if(!sess) return;
-
-      const user = me();
-      if(!user){ clearSession(); mount(); return; }
-
-      // ✅ 우측 상단 표기: "마스터 계정" / 일반 ADMIN은 "관리자"
-      const roleText = isMasterAccount(user) ? "마스터 계정" : (ROLE_LABEL[user.role] || user.role);
-      document.getElementById("whoText").textContent =
-        `${user.companyName ? user.companyName + " " : ""}${user.id} (${roleText})`;
-
-      // 네비
+    function buildNav(){
       const nav = document.getElementById("navTabs");
       nav.innerHTML = "";
-      const allowed = PAGES.filter(p => p.roles.includes(user.role));
+      const allowed = PAGES.filter(p => p.roles.includes(current.role));
       allowed.forEach(p=>{
         const b = document.createElement("button");
         b.className = "tab" + (p.key===activePage ? " active" : "");
@@ -946,104 +792,158 @@
         nav.appendChild(b);
       });
 
-      // ✅ 마스터면 사용자 생성 role에 ADMIN 옵션 추가
+      // 마스터면 role select에 ADMIN 옵션 추가
       const roleSel = document.getElementById("u_role");
       if(roleSel){
         const hasAdmin = [...roleSel.options].some(o=>o.value==="ADMIN");
-        if(isMasterAccount(user) && !hasAdmin){
+        if(isMasterAccount() && !hasAdmin){
           const opt = document.createElement("option");
           opt.value = "ADMIN";
           opt.textContent = "관리자(ADMIN)";
           roleSel.appendChild(opt);
         }
       }
-
-      render();
     }
 
-    function showPage(key){
-      for(const p of PAGES){
-        const el = document.getElementById("page_"+p.key);
-        if(el) el.style.display = (p.key===key) ? "grid" : "none";
-      }
-      const user = me();
-      if(!user) return;
-      const allowed = PAGES.filter(p => p.roles.includes(user.role));
-      const nav = document.getElementById("navTabs");
-      [...nav.children].forEach((node, idx)=>{
-        node.classList.toggle("active", allowed[idx]?.key === key);
-      });
-    }
-
-    function render(){
+    async function render(){
       showPage(activePage);
       if(activePage==="dash") renderDash();
       if(activePage==="slots") renderSlotsPage();
-      if(activePage==="assign") renderAssign();
-      if(activePage==="users") renderUsers();
-      if(activePage==="cleanup") renderCleanup();
+      if(activePage==="assign") await renderAssign();
+      if(activePage==="users") await renderUsers();
       if(activePage==="logs") renderLogs();
     }
 
-    function refresh(){
-      render();
-      toast("새로고침 완료");
+    async function refresh(){
+      try{
+        await loadUsers();
+        await loadSlots();
+        await render();
+        toast("새로고침 완료");
+      }catch(e){
+        console.error(e);
+        toast("새로고침 실패", e?.message || "");
+      }
     }
 
-    function login(){
+    /******************************************************************
+     * ✅ 로그인/로그아웃 (Supabase Auth)
+     ******************************************************************/
+    async function login(){
       const id = document.getElementById("loginId").value.trim();
       const pw = document.getElementById("loginPw").value.trim();
-      const u = getUsers().find(x => x.id === id && x.pw === pw);
-      if(!u){
-        toast("로그인 실패", "아이디/비밀번호를 확인하세요.");
-        return;
+      if(!id || !pw){ toast("입력 필요","아이디/비밀번호를 입력하세요."); return; }
+
+      try{
+        const email = toEmail(id);
+        const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+        if(error) throw error;
+
+        logEvent(`로그인(Supabase): ${id}`);
+        await bootstrapAuthed();
+      }catch(e){
+        console.error(e);
+        toast("로그인 실패", e?.message || "아이디/비밀번호 확인");
       }
-      setSession({ id: u.id, at: nowISO() });
-      logEvent(`로그인: ${u.id} (${u.role}${isMasterAccount(u) ? "/MASTER" : ""})`);
-      activePage = "dash";
-      mount();
     }
-    function logout(){
-      const sess = getSession();
-      if(sess) logEvent(`로그아웃: ${sess.id}`);
-      clearSession();
+
+    async function logout(){
+      try{
+        await sb.auth.signOut();
+      }catch(e){}
+      logEvent(`로그아웃`);
+      current = { id:"", role:"", companyName:"", uid:null };
+      usersCache = [];
+      slotsCache = [];
       activePage = "dash";
-      mount();
+      mountUnauthed();
     }
+
     document.addEventListener("keydown",(e)=>{
       if(e.key==="Enter" && document.getElementById("loginView").style.display!=="none"){
         login();
       }
     });
 
+    /******************************************************************
+     * ✅ 앱 초기 부팅
+     ******************************************************************/
+    function mountUnauthed(){
+      document.getElementById("loginView").style.display = "grid";
+      document.getElementById("appView").style.display = "none";
+    }
+
+    async function bootstrapAuthed(){
+      const profile = await fetchMyProfile();
+
+      current = {
+        id: profile.id,
+        role: profile.role,
+        companyName: profile.company_name || "",
+        uid: profile.uid || null
+      };
+
+      document.getElementById("loginView").style.display = "none";
+      document.getElementById("appView").style.display = "block";
+
+      const roleText = isMasterAccount() ? "마스터 계정" : (ROLE_LABEL[current.role] || current.role);
+      document.getElementById("whoText").textContent =
+        `${current.companyName ? current.companyName + " " : ""}${current.id} (${roleText})`;
+
+      buildNav();
+
+      await loadUsers();
+      await loadSlots();
+
+      activePage = "dash";
+      await render();
+    }
+
+    (async function init(){
+      try{
+        const { data } = await sb.auth.getSession();
+        if(data?.session){
+          await bootstrapAuthed();
+        }else{
+          mountUnauthed();
+        }
+      }catch(e){
+        console.error(e);
+        toast("초기화 실패", e?.message || "");
+        mountUnauthed();
+      }
+    })();
+
+    /******************************************************************
+     * ✅ 슬롯 로직 (UI는 기존과 거의 동일)
+     ******************************************************************/
     function updateExpired(slots){
       const now = new Date();
       for(const s of slots){
-        if(s.endDate){
-          const end = new Date(s.endDate + "T23:59:59");
+        if(s.end_date){
+          const end = new Date(s.end_date + "T23:59:59");
           s.expired = (end < now);
-        } else {
-          s.expired = false;
-        }
+        } else s.expired = false;
       }
       return slots;
     }
 
-    function visibleSlotsForUser(allSlots, user){
+    function visibleSlotsForUser(allSlots){
       const slots = updateExpired([...allSlots]);
-      if(user.role==="ADMIN") return slots;
+      if(current.role==="ADMIN") return slots;
+
       return slots.filter(s =>
-        s.userId === user.id &&
-        !s.hiddenByAdmin &&
-        !s.withdrawPending &&
+        s.user_id === current.id &&
+        !s.hidden_by_admin &&
+        !s.withdraw_pending &&
         (s.opened || s.saved)
       );
     }
 
     function slotStateTag(s){
       if(s.expired) return `<span class="tag red">만료</span>`;
-      if(s.withdrawPending) return `<span class="tag gray">철회 대기</span>`;
-      if(s.hiddenByAdmin) return `<span class="tag gray">숨김</span>`;
+      if(s.withdraw_pending) return `<span class="tag gray">철회 대기</span>`;
+      if(s.hidden_by_admin) return `<span class="tag gray">숨김</span>`;
       if(s.saved) return `<span class="tag green">정상</span>`;
       if(s.opened) return `<span class="tag gold">오픈됨</span>`;
       return `<span class="tag gray">부여됨</span>`;
@@ -1068,124 +968,10 @@
     }
 
     function storeIdTagHtml(s){
-      const v = (s.storeId || "").trim();
+      const v = (s.store_id || "").trim();
       if(!v) return `<span class="muted">-</span>`;
       const cls = s.saved ? "green" : "gray";
       return `<span class="tag ${cls}" title="${escapeHtml(v)}">${escapeHtml(v)}</span>`;
-    }
-
-    function addDaysToDateStr(dateStr, days){
-      const d = new Date(dateStr + "T00:00:00");
-      d.setDate(d.getDate() + days);
-      return d.toISOString().slice(0,10);
-    }
-
-    function askExtendDays(defaultVal="7"){
-      const v = prompt("연장할 일수를 입력하세요 (예: 7)", defaultVal);
-      if(v===null) return null;
-      const d = parseInt(String(v).trim(), 10);
-      if(!d || d < 1) return null;
-      return d;
-    }
-
-    function bulkExtend(ids, days, requireEligible){
-      const d = parseInt(days, 10);
-      if(!d || d < 1) return 0;
-
-      const slots = getSlots();
-      const idSet = new Set(ids);
-      let ok = 0;
-
-      for(const s of slots){
-        if(!idSet.has(s.id)) continue;
-        if(!s.endDate) continue;
-
-        if(requireEligible){
-          if(!(s.opened && s.saved) || s.withdrawPending || s.expired) continue;
-        }
-        s.endDate = addDaysToDateStr(s.endDate, d);
-        s.expired = false;
-        ok++;
-      }
-
-      setSlots(slots);
-      return ok;
-    }
-
-    function bulkDelete(ids){
-      const idSet = new Set(ids);
-      let slots = getSlots();
-      const before = slots.length;
-      slots = slots.filter(s => !idSet.has(s.id));
-      setSlots(slots);
-      return before - slots.length;
-    }
-
-    function setAllSelection(ids, checked, targetSet){
-      if(checked) ids.forEach(id => targetSet.add(id));
-      else ids.forEach(id => targetSet.delete(id));
-    }
-    function toggleSelection(id, checked, targetSet){
-      if(checked) targetSet.add(id);
-      else targetSet.delete(id);
-    }
-
-    function renderSlotBulkBar(visibleIds){
-      const user = me();
-      const bar = document.getElementById("slotBulkBar");
-      if(!bar) return;
-
-      if(user.role !== "ADMIN"){
-        bar.innerHTML = "";
-        return;
-      }
-
-      bar.innerHTML = `
-        <button class="btn mini" id="slotSelectAllBtn">전체선택</button>
-        <button class="btn mini btnRed" id="slotDeleteSelBtn">선택삭제</button>
-        <button class="btn mini btnNeon" id="slotExtendSelBtn">선택연장</button>
-      `;
-
-      document.getElementById("slotSelectAllBtn").onclick = ()=>{
-        const allSelected = visibleIds.length>0 && visibleIds.every(id => selectedSlotIds.has(id));
-        setAllSelection(visibleIds, !allSelected, selectedSlotIds);
-        renderSlotsPage();
-        toast(!allSelected ? "전체 선택" : "전체 해제");
-      };
-
-      document.getElementById("slotDeleteSelBtn").onclick = ()=>{
-        const ids = [...selectedSlotIds].filter(id => visibleIds.includes(id));
-        if(ids.length===0){ toast("선택 없음"); return; }
-        const ok = confirm(`선택한 ${ids.length}개 슬롯을 완전 삭제할까요?\n* 복구 불가`);
-        if(!ok) return;
-
-        const deleted = bulkDelete(ids);
-        ids.forEach(id => selectedSlotIds.delete(id));
-        ids.forEach(id => { editingSlotIds.delete(id); slotDrafts.delete(id); });
-
-        logEvent(`선택삭제(슬롯관리): count=${deleted}`);
-        toast("선택삭제 완료", `${deleted}개 삭제`);
-        renderSlotsPage();
-        if(activePage==="dash") renderDash();
-      };
-
-      document.getElementById("slotExtendSelBtn").onclick = ()=>{
-        const ids = [...selectedSlotIds].filter(id => visibleIds.includes(id));
-        if(ids.length===0){ toast("선택 없음"); return; }
-
-        const d = askExtendDays("7");
-        if(!d){ toast("연장 취소/오류"); return; }
-
-        const okCount = bulkExtend(ids, d, true);
-        if(okCount===0){
-          toast("연장 가능한 슬롯 없음", "오픈+저장완료 슬롯만 연장됩니다.");
-          return;
-        }
-        logEvent(`선택연장(슬롯관리): count=${okCount}, +${d}일`);
-        toast("선택연장 완료", `${okCount}개 +${d}일`);
-        renderSlotsPage();
-        if(activePage==="dash") renderDash();
-      };
     }
 
     function ensureSlotDraft(slot){
@@ -1193,7 +979,7 @@
         slotDrafts.set(slot.id, {
           kw: slot.keyword || "",
           link: slot.link || "",
-          catalogLink: slot.catalogLink || "",
+          catalogLink: slot.catalog_link || "",
           memo: slot.memo || ""
         });
       }
@@ -1206,7 +992,7 @@
         return `<span class="colLink" title="${escapeHtml(s.link||"")}">${escapeHtml(s.link||"")}</span>`;
       }
       const a = s.link || "";
-      const b = s.catalogLink || "";
+      const b = s.catalog_link || "";
       return `
         <div class="linkCell">
           <div><span class="k">상품</span><span class="v" title="${escapeHtml(a)}">${escapeHtml(a)}</span></div>
@@ -1229,27 +1015,26 @@
     }
 
     function renderSlotsPage(){
-      const user = me();
-      const all = getSlots();
-      const slots = visibleSlotsForUser(all, user);
+      const all = slotsCache || [];
+      const slots = visibleSlotsForUser(all);
 
       const uf = document.getElementById("slotUserFilter");
-      if(user.role==="ADMIN"){
-        const users = getUsers().filter(u=>!(u.role==="ADMIN" && u.id===MASTER_ID));
-        const current = uf.value || "ALL";
+      if(current.role==="ADMIN"){
+        const users = usersCache.filter(u=>!(u.role==="ADMIN" && u.id===MASTER_ID));
+        const currentVal = uf.value || "ALL";
         uf.innerHTML =
           `<option value="ALL">전체</option>` +
           users.map(u=>`<option value="${escapeHtml(u.id)}">${escapeHtml(displayUserName(u.id))}</option>`).join("");
-        uf.value = current;
+        uf.value = currentVal;
         uf.disabled = false;
       } else {
-        uf.innerHTML = `<option value="${escapeHtml(user.id)}">${escapeHtml(displayUserName(user.id))}</option>`;
-        uf.value = user.id;
+        uf.innerHTML = `<option value="${escapeHtml(current.id)}">${escapeHtml(displayUserName(current.id))}</option>`;
+        uf.value = current.id;
         uf.disabled = true;
       }
 
       const hint = document.getElementById("slotHint");
-      hint.innerHTML = (user.role==="ADMIN")
+      hint.innerHTML = (current.role==="ADMIN")
         ? `관리자 모드: 전체 슬롯 조회 · 사용자에게는 <b style="color:rgba(255,255,255,.95)">오픈/정상</b> 슬롯만 노출`
         : `사용자 모드: <b style="color:rgba(255,255,255,.95)">오픈됨/정상</b> 슬롯만 보입니다.`;
 
@@ -1259,35 +1044,33 @@
 
       let rows = [...slots];
 
-      if(user.role==="ADMIN" && ufi !== "ALL"){
-        rows = rows.filter(s => s.userId === ufi);
+      if(current.role==="ADMIN" && ufi !== "ALL"){
+        rows = rows.filter(s => s.user_id === ufi);
       }
 
       if(st !== "ALL"){
-        if(st==="ALLOCATED") rows = rows.filter(s => !s.opened && !s.saved && !s.expired && !s.withdrawPending);
-        if(st==="OPENED") rows = rows.filter(s => s.opened && !s.saved && !s.expired && !s.withdrawPending);
-        if(st==="SAVED") rows = rows.filter(s => s.saved && !s.expired && !s.withdrawPending);
+        if(st==="ALLOCATED") rows = rows.filter(s => !s.opened && !s.saved && !s.expired && !s.withdraw_pending);
+        if(st==="OPENED") rows = rows.filter(s => s.opened && !s.saved && !s.expired && !s.withdraw_pending);
+        if(st==="SAVED") rows = rows.filter(s => s.saved && !s.expired && !s.withdraw_pending);
         if(st==="EXPIRED") rows = rows.filter(s => s.expired);
       }
 
       if(q){
         rows = rows.filter(s => {
-          const storeId = (s.storeId || "").toLowerCase();
-          const linkAll = ((s.link||"") + " " + (s.catalogLink||"")).toLowerCase();
+          const storeId = (s.store_id || "").toLowerCase();
+          const linkAll = ((s.link||"") + " " + (s.catalog_link||"")).toLowerCase();
           return (
-            (s.userId||"").toLowerCase().includes(q) ||
+            (s.user_id||"").toLowerCase().includes(q) ||
             (s.keyword||"").toLowerCase().includes(q) ||
             linkAll.includes(q) ||
             (s.memo||"").toLowerCase().includes(q) ||
-            (displayUserName(s.userId||"").toLowerCase().includes(q)) ||
+            (displayUserName(s.user_id||"").toLowerCase().includes(q)) ||
             storeId.includes(q)
           );
         });
       }
 
       rows.sort((a,b)=> (a.no||0)-(b.no||0));
-      const visibleIds = rows.map(r => r.id);
-      renderSlotBulkBar(visibleIds);
 
       const tb = document.getElementById("slotTbody");
       tb.innerHTML = "";
@@ -1297,25 +1080,25 @@
 
         const canEdit =
           (!s.expired) &&
-          (!s.withdrawPending) &&
-          (user.role==="ADMIN" || s.userId === user.id) &&
+          (!s.withdraw_pending) &&
+          (current.role==="ADMIN" || s.user_id === current.id) &&
           (s.opened || s.saved);
 
         const isEditing = editingSlotIds.has(s.id);
 
         let manage = "";
-        if(user.role==="ADMIN"){
-          const withdrawBtn = (!s.expired && !s.withdrawPending)
+        if(current.role==="ADMIN"){
+          const withdrawBtn = (!s.expired && !s.withdraw_pending)
             ? `<button class="btn mini btnRed" data-act="withdraw" data-id="${escapeHtml(s.id)}">철회</button>`
             : "";
 
-          const extendBtn = (!s.expired && !s.withdrawPending && s.opened && s.saved)
+          const extendBtn = (!s.expired && !s.withdraw_pending && s.opened && s.saved)
             ? `<button class="btn mini btnNeon" data-act="extend" data-id="${escapeHtml(s.id)}">연장</button>`
             : "";
 
-          if(s.withdrawPending){
+          if(s.withdraw_pending){
             manage = `<span class="muted">철회 대기</span>`;
-          } else if(s.hiddenByAdmin && !s.expired){
+          } else if(s.hidden_by_admin && !s.expired){
             manage = `
               <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <button class="btn mini btnNeon" data-act="open" data-id="${escapeHtml(s.id)}">오픈</button>
@@ -1372,17 +1155,16 @@
           memoCell = `${escapeHtml(s.memo||"")}`;
         }
 
-        const checked = selectedSlotIds.has(s.id);
-        const expSoon = isExpiringTomorrow(s.endDate);
+        const expSoon = isExpiringTomorrow(s.end_date);
 
         tr.innerHTML = `
-          <td><input class="chk" type="checkbox" data-sel="slot" data-id="${escapeHtml(s.id)}" ${checked ? "checked":""} /></td>
+          <td><input class="chk" type="checkbox" disabled /></td>
           <td>${escapeHtml(String(s.no||"-"))}</td>
-          <td><div style="font-weight:1200">${escapeHtml(displayUserName(s.userId||"-"))}</div></td>
+          <td><div style="font-weight:1200">${escapeHtml(displayUserName(s.user_id||"-"))}</div></td>
           <td><span class="tag gold typeTag">${escapeHtml(typeDisplay(s.type))}</span></td>
           <td>${storeIdTagHtml(s)}</td>
-          <td>${escapeHtml(s.startDate||"-")}</td>
-          <td class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
+          <td>${escapeHtml(s.start_date||"-")}</td>
+          <td class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.end_date||"-")}</td>
           <td>${slotStateTag(s)}</td>
           <td>${editCell}</td>
           <td>${kwCell}</td>
@@ -1392,13 +1174,6 @@
         `;
         tb.appendChild(tr);
       }
-
-      tb.querySelectorAll('input[data-sel="slot"]').forEach(chk=>{
-        chk.addEventListener("change", ()=>{
-          const id = chk.getAttribute("data-id");
-          toggleSelection(id, chk.checked, selectedSlotIds);
-        });
-      });
 
       tb.querySelectorAll('input[data-f]').forEach(inp=>{
         inp.addEventListener("input", ()=>{
@@ -1414,16 +1189,16 @@
       });
 
       tb.querySelectorAll("button[data-act]").forEach(btn=>{
-        btn.addEventListener("click", ()=>{
+        btn.addEventListener("click", async ()=>{
           const act = btn.getAttribute("data-act");
           const id = btn.getAttribute("data-id");
+
           if(act==="edit"){
             editingSlotIds.add(id);
-            const slots = getSlots();
-            const s = slots.find(x=>x.id===id);
+            const s = slotsCache.find(x=>x.id===id);
             if(s) ensureSlotDraft(s);
             renderSlotsPage();
-            toast("수정 모드", "여러 슬롯 동시 수정 가능");
+            toast("수정 모드","저장 누르면 Supabase에 반영됩니다.");
             return;
           }
           if(act==="cancel"){
@@ -1432,25 +1207,23 @@
             renderSlotsPage();
             return;
           }
-          if(act==="save"){ saveSlotInline(id); return; }
-          if(act==="open"){ openSlot(id); return; }
-          if(act==="hide"){ hideSlot(id); return; }
-          if(act==="withdraw"){ withdrawSlot(id); return; }
-          if(act==="extend"){ extendSlotUI(id); return; }
+          if(act==="save"){ await saveSlotInline(id); return; }
+          if(act==="open"){ await openSlot(id); return; }
+          if(act==="hide"){ await hideSlot(id); return; }
+          if(act==="withdraw"){ await withdrawSlot(id); return; }
+          if(act==="extend"){ await extendSlotUI(id); return; }
         });
       });
     }
 
-    function saveSlotInline(id){
-      const user = me();
-      const slots = getSlots();
-      const s = slots.find(x=>x.id===id);
+    async function saveSlotInline(id){
+      const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
       if(s.expired){ toast("만료된 슬롯"); return; }
-      if(s.withdrawPending){ toast("철회 대기 슬롯"); return; }
-      if(!(user.role==="ADMIN" || s.userId === user.id)){ toast("권한 없음"); return; }
+      if(s.withdraw_pending){ toast("철회 대기 슬롯"); return; }
+      if(!(current.role==="ADMIN" || s.user_id === current.id)){ toast("권한 없음"); return; }
 
-      const d = slotDrafts.get(id) || { kw: s.keyword||"", link: s.link||"", catalogLink: s.catalogLink||"", memo: s.memo||"" };
+      const d = slotDrafts.get(id) || { kw: s.keyword||"", link: s.link||"", catalogLink: s.catalog_link||"", memo: s.memo||"" };
       const kw = (d.kw || "").trim();
       const link = (d.link || "").trim();
       const catalogLink = (d.catalogLink || "").trim();
@@ -1458,133 +1231,135 @@
 
       const wonbu = isTypeWonbu(s.type);
 
-      if(!kw || !link){
-        toast("저장 실패", "키워드/상품링크는 필수입니다.");
-        return;
-      }
-      if(wonbu && !catalogLink){
-        toast("저장 실패", "원부 타입은 카탈로그 링크도 필수입니다.");
-        return;
-      }
+      if(!kw || !link){ toast("저장 실패","키워드/상품링크는 필수입니다."); return; }
+      if(wonbu && !catalogLink){ toast("저장 실패","원부 타입은 카탈로그 링크도 필수입니다."); return; }
 
-      s.keyword = kw;
-      s.link = link;
-      s.catalogLink = wonbu ? catalogLink : "";
-      s.memo = memo;
+      const patch = {
+        keyword: kw,
+        link: link,
+        catalog_link: wonbu ? catalogLink : "",
+        memo: memo,
+        opened: true,
+        saved: true,
+        hidden_by_admin: false,
+        withdraw_pending: false,
+        store_id: extractStoreId(link),
+      };
 
-      s.opened = true;
-      s.saved = true;
-      s.hiddenByAdmin = false;
-      s.withdrawPending = false;
+      const { error } = await sb.from(T_SLOTS).update(patch).eq("id", id);
+      if(error){ console.error(error); toast("저장 실패", error.message); return; }
 
-      s.storeId = extractStoreId(link);
-
-      setSlots(slots);
-      logEvent(`슬롯 저장: user=${s.userId}, type=${typeDisplay(s.type)}, kw=${kw}, storeId=${s.storeId||"-"}`);
-      toast("저장 완료", s.storeId ? `스토어ID: ${s.storeId}` : "스토어ID 추출 실패(링크 형태 확인)");
-
+      logEvent(`슬롯 저장: user=${s.user_id}, type=${typeDisplay(s.type)}, kw=${kw}`);
+      toast("저장 완료", patch.store_id ? `스토어ID: ${patch.store_id}` : "스토어ID 추출 실패");
       editingSlotIds.delete(id);
       slotDrafts.delete(id);
 
+      await loadSlots();
       renderSlotsPage();
       if(activePage==="dash") renderDash();
     }
 
-    function openSlot(id){
-      const slots = getSlots();
-      const s = slots.find(x=>x.id===id);
-      if(!s) return;
-      s.hiddenByAdmin = false;
-      s.withdrawPending = false;
-      s.opened = true;
-      setSlots(slots);
-      logEvent(`슬롯 오픈: ${s.userId} (slot=${id})`);
-      toast("오픈 완료", "사용자 화면에 슬롯이 노출됩니다.");
+    async function openSlot(id){
+      if(current.role!=="ADMIN"){ toast("권한 없음"); return; }
+      const { error } = await sb.from(T_SLOTS).update({ hidden_by_admin:false, withdraw_pending:false, opened:true }).eq("id", id);
+      if(error){ console.error(error); toast("오픈 실패", error.message); return; }
+      logEvent(`슬롯 오픈: slot=${id}`);
+      toast("오픈 완료","사용자 화면에 노출됩니다.");
+      await loadSlots();
       renderSlotsPage();
     }
 
-    function hideSlot(id){
-      const slots = getSlots();
-      const s = slots.find(x=>x.id===id);
-      if(!s) return;
-      s.hiddenByAdmin = true;
-      s.opened = false;
-      setSlots(slots);
-      logEvent(`슬롯 숨김(관리자전용): ${s.userId} (slot=${id})`);
-      toast("숨김 처리", "관리자에게만 보이도록 숨김 처리되었습니다.");
-
+    async function hideSlot(id){
+      if(current.role!=="ADMIN"){ toast("권한 없음"); return; }
+      const { error } = await sb.from(T_SLOTS).update({ hidden_by_admin:true, opened:false }).eq("id", id);
+      if(error){ console.error(error); toast("숨김 실패", error.message); return; }
+      logEvent(`슬롯 숨김: slot=${id}`);
+      toast("숨김 처리","관리자에게만 보이게 됩니다.");
       editingSlotIds.delete(id);
       slotDrafts.delete(id);
-
+      await loadSlots();
       renderSlotsPage();
     }
 
-    function withdrawSlot(id){
-      const user = me();
-      if(!user || user.role !== "ADMIN"){ toast("권한 없음"); return; }
-
-      const slots = getSlots();
-      const s = slots.find(x=>x.id===id);
-      if(!s){ toast("슬롯을 찾을 수 없음"); return; }
+    async function withdrawSlot(id){
+      if(current.role!=="ADMIN"){ toast("권한 없음"); return; }
+      const s = slotsCache.find(x=>x.id===id);
+      if(!s){ toast("슬롯 없음"); return; }
       if(s.expired){ toast("만료된 슬롯"); return; }
 
       const ok = confirm(
-        `철회 처리(철회 대기)로 변경할까요?\n\n번호: ${s.no}\n사용자: ${displayUserName(s.userId)}\n\n* 사용자 화면 숨김\n* ‘슬롯 삭제’에만 표시`
+        `철회 처리(철회 대기)로 변경할까요?\n\n번호: ${s.no}\n사용자: ${displayUserName(s.user_id)}\n\n* 사용자 화면 숨김`
       );
       if(!ok) return;
 
-      s.withdrawPending = true;
-      s.hiddenByAdmin = true;
-      s.opened = false;
-      s.saved = false;
+      const patch = { withdraw_pending:true, hidden_by_admin:true, opened:false, saved:false };
+      const { error } = await sb.from(T_SLOTS).update(patch).eq("id", id);
+      if(error){ console.error(error); toast("철회 실패", error.message); return; }
 
-      setSlots(slots);
-      logEvent(`슬롯 철회대기: no=${s.no}, user=${s.userId}`);
-      toast("철회 대기", `번호 ${s.no} → 슬롯 삭제 메뉴로 이동`);
-
+      logEvent(`슬롯 철회대기: no=${s.no}, user=${s.user_id}`);
+      toast("철회 대기","처리 완료");
       editingSlotIds.delete(id);
       slotDrafts.delete(id);
-
+      await loadSlots();
       renderSlotsPage();
       if(activePage==="dash") renderDash();
     }
 
-    function extendSlotUI(id){
-      const user = me();
-      if(user.role !== "ADMIN"){ toast("권한 없음"); return; }
+    function addDaysToDateStr(dateStr, days){
+      const d = new Date(dateStr + "T00:00:00");
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0,10);
+    }
+    function askExtendDays(defaultVal="7"){
+      const v = prompt("연장할 일수를 입력하세요 (예: 7)", defaultVal);
+      if(v===null) return null;
+      const d = parseInt(String(v).trim(), 10);
+      if(!d || d < 1) return null;
+      return d;
+    }
 
-      const slots = getSlots();
-      const s = slots.find(x=>x.id===id);
+    async function extendSlotUI(id){
+      if(current.role!=="ADMIN"){ toast("권한 없음"); return; }
+      const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯 없음"); return; }
-      if(!(s.opened && s.saved)){ toast("연장 불가", "오픈+저장완료 슬롯만 연장됩니다."); return; }
+      if(!(s.opened && s.saved)){ toast("연장 불가","오픈+저장완료 슬롯만 연장됩니다."); return; }
 
       const d = askExtendDays("7");
       if(!d){ toast("연장 취소/오류"); return; }
 
-      const ok = confirm(`번호 ${s.no} 슬롯을 +${d}일 연장할까요?\n(만료일: ${s.endDate} → ${addDaysToDateStr(s.endDate, d)})`);
+      const next = addDaysToDateStr(s.end_date, d);
+      const ok = confirm(`번호 ${s.no} 슬롯을 +${d}일 연장할까요?\n(만료일: ${s.end_date} → ${next})`);
       if(!ok) return;
 
-      const okCount = bulkExtend([id], d, true);
-      if(okCount){
-        logEvent(`연장: no=${s.no}, +${d}일 (user=${s.userId})`);
-        toast("연장 완료", `번호 ${s.no} +${d}일`);
-        renderSlotsPage();
-        if(activePage==="dash") renderDash();
-      }
+      const { error } = await sb.from(T_SLOTS).update({ end_date: next }).eq("id", id);
+      if(error){ console.error(error); toast("연장 실패", error.message); return; }
+
+      logEvent(`연장: no=${s.no}, +${d}일 (user=${s.user_id})`);
+      toast("연장 완료", `번호 ${s.no} +${d}일`);
+      await loadSlots();
+      renderSlotsPage();
+      if(activePage==="dash") renderDash();
     }
 
+    /******************************************************************
+     * ✅ 슬롯부여(ADMIN)
+     ******************************************************************/
     function syncAssignEndFromStart(){
       const stVal = document.getElementById("assign_start").value;
       if(!stVal) return;
       document.getElementById("assign_end").value = addDaysToDateStr(stVal, 10);
     }
+    function quickDays(n){
+      const stVal = document.getElementById("assign_start").value;
+      if(!stVal) return;
+      document.getElementById("assign_end").value = addDaysToDateStr(stVal, n);
+    }
 
-    function renderAssign(){
-      const user = me();
-      if(user.role!=="ADMIN"){ activePage="slots"; render(); return; }
+    async function renderAssign(){
+      if(current.role!=="ADMIN"){ activePage="slots"; render(); return; }
 
       const sel = document.getElementById("assign_user");
-      const targets = getUsers().filter(u=>!(u.role==="ADMIN" && u.id===MASTER_ID)); // 마스터 제외
+      const targets = usersCache.filter(u=>!(u.role==="ADMIN" && u.id===MASTER_ID));
       sel.innerHTML = targets.length
         ? targets.map(u=>`<option value="${escapeHtml(u.id)}">${escapeHtml(displayUserName(u.id))} (${ROLE_LABEL[u.role] || u.role})</option>`).join("")
         : `<option value="">(사용자 계정이 없습니다)</option>`;
@@ -1592,7 +1367,6 @@
 
       const st = document.getElementById("assign_start");
       const en = document.getElementById("assign_end");
-
       if(!st.value){
         const d = new Date();
         d.setDate(d.getDate() + 1);
@@ -1603,15 +1377,8 @@
       }
     }
 
-    function quickDays(n){
-      const stVal = document.getElementById("assign_start").value;
-      if(!stVal) return;
-      document.getElementById("assign_end").value = addDaysToDateStr(stVal, n);
-    }
-
-    function allocateSlots(){
-      const user = me();
-      if(user.role!=="ADMIN"){ toast("권한 없음"); return; }
+    async function allocateSlots(){
+      if(current.role!=="ADMIN"){ toast("권한 없음"); return; }
 
       const uid = document.getElementById("assign_user").value;
       const type = document.getElementById("assign_type").value || "스퀘어(단일)";
@@ -1623,40 +1390,46 @@
       if(!qty || qty<1){ toast("수량은 1 이상"); return; }
       if(!start || !end){ toast("기간 입력 필요"); return; }
 
-      const slots = getSlots();
-      const maxNo = slots.reduce((m,s)=>Math.max(m, s.no||0), 0);
-      const newOnes = [];
+      const maxNo = (slotsCache || []).reduce((m,s)=>Math.max(m, s.no||0), 0);
+
+      const rows = [];
       for(let i=0;i<qty;i++){
-        newOnes.push({
+        rows.push({
           id: "S" + Math.random().toString(16).slice(2) + Date.now().toString(16),
           no: maxNo + i + 1,
-          userId: uid,
+          user_id: uid,
           type,
-          startDate: start,
-          endDate: end,
+          start_date: start,
+          end_date: end,
           opened: false,
           saved: false,
-          hiddenByAdmin: false,
-          withdrawPending: false,
+          hidden_by_admin: false,
+          withdraw_pending: false,
           keyword: "",
           link: "",
-          catalogLink: "",
+          catalog_link: "",
           memo: "",
-          storeId: "",
-          expired: false,
-          createdAt: nowISO()
+          store_id: "",
+          created_at: nowISO()
         });
       }
-      setSlots([...slots, ...newOnes]);
+
+      const { error } = await sb.from(T_SLOTS).insert(rows);
+      if(error){ console.error(error); toast("슬롯부여 실패", error.message); return; }
+
       logEvent(`슬롯부여: user=${uid}, qty=${qty}, 타입=${type}, 기간=${start}~${end}`);
       toast("슬롯부여 완료", `총 ${qty}개 생성됨 (슬롯관리에서 ‘오픈’ 필요)`);
+
+      await loadSlots();
       activePage = "slots";
       render();
     }
 
-    function createUser(){
-      const user = me();
-      if(user.role!=="ADMIN"){ toast("권한 없음"); return; }
+    /******************************************************************
+     * ✅ 사용자 생성(ADMIN) - Edge Function 호출
+     ******************************************************************/
+    async function createUser(){
+      if(current.role!=="ADMIN"){ toast("권한 없음"); return; }
 
       const id = document.getElementById("u_id").value.trim();
       const pw = document.getElementById("u_pw").value.trim();
@@ -1667,314 +1440,58 @@
       if(!pw || pw.length < 2){ toast("비밀번호를 입력하세요"); return; }
       if(!companyName){ toast("업체명은 필수입니다"); return; }
 
-      // ✅ 마스터 계정 아이디는 생성 금지(충돌 방지)
-      if(id === MASTER_ID){
-        toast("생성 불가", "마스터 계정 아이디는 사용할 수 없습니다.");
-        return;
-      }
+      if(id === MASTER_ID){ toast("생성 불가","마스터 계정 아이디는 사용할 수 없습니다."); return; }
+      if(role === "ADMIN" && !isMasterAccount()){ toast("권한 없음","관리자(ADMIN) 계정 생성은 마스터 계정만 가능합니다."); return; }
 
-      // ✅ 일반 관리자(ADMIN) 계정 생성은 “마스터 계정”만 가능
-      if(role === "ADMIN" && !isMasterAccount(user)){
-        toast("권한 없음", "관리자(ADMIN) 계정 생성은 마스터 계정만 가능합니다.");
-        return;
-      }
-
-      const users = getUsers();
-      if(users.some(u=>u.id===id)){
-        toast("이미 존재하는 아이디", "다른 아이디로 생성하세요.");
-        return;
-      }
-
-      users.push({ id, pw, role, companyName, createdAt: nowISO() });
-      setUsers(users);
-      logEvent(`계정 생성: ${id} (${role}) 업체명=${companyName}`);
-
-      document.getElementById("u_id").value = "";
-      document.getElementById("u_pw").value = "";
-      document.getElementById("u_company").value = "";
-
-      toast("계정 생성 완료", `${companyName}(${id}) / ${ROLE_LABEL[role] || role}`);
-      renderUsers();
-      renderAssign();
-      if(activePage==="cleanup") renderCleanup();
-    }
-
-    function deleteUser(id){
-      const user = me();
-      if(user.role!=="ADMIN"){ toast("권한 없음"); return; }
-      if(id === MASTER_ID){ toast("불가", "마스터 계정은 삭제할 수 없습니다."); return; }
-
-      const ok = confirm(`계정(${id})을 삭제할까요?\n* 해당 슬롯은 남아있지만 사용자 매칭이 끊길 수 있습니다.`);
-      if(!ok) return;
-
-      let users = getUsers();
-      users = users.filter(u => u.id !== id);
-      setUsers(users);
-
-      editingUserIds.delete(id);
-      userDrafts.delete(id);
-
-      logEvent(`계정 삭제: ${id}`);
-      toast("삭제 완료", id);
-
-      renderUsers();
-      renderAssign();
-      if(activePage==="slots") renderSlotsPage();
-      if(activePage==="cleanup") renderCleanup();
-    }
-
-    function ensureUserDraft(u){
-      if(!userDrafts.has(u.id)){
-        userDrafts.set(u.id, {
-          idNew: u.id,
-          pwNew: u.pw || "",
-          companyNew: u.companyName || "",
-          roleNew: u.role || "ADVERTISER"
+      try{
+        // ✅ Edge Function: admin-create-user (이미 민수님이 만들어둔 함수)
+        const { data, error } = await sb.functions.invoke("admin-create-user", {
+          body: { id, password: pw, role, companyName }
         });
+        if(error) throw error;
+
+        logEvent(`계정 생성(Supabase): ${id} (${role}) 업체명=${companyName}`);
+        toast("계정 생성 완료", `${companyName}(${id}) / ${ROLE_LABEL[role] || role}`);
+
+        document.getElementById("u_id").value = "";
+        document.getElementById("u_pw").value = "";
+        document.getElementById("u_company").value = "";
+
+        await loadUsers();
+        await renderUsers();
+        await renderAssign();
+      }catch(e){
+        console.error(e);
+        toast("생성 실패", e?.message || "Edge Function/권한/RLS 확인");
       }
-      return userDrafts.get(u.id);
     }
 
-    function saveUserInline(oldId){
-      const admin = me();
-      if(admin.role!=="ADMIN"){ toast("권한 없음"); return; }
-      if(oldId === MASTER_ID){ toast("불가", "마스터 계정은 수정할 수 없습니다."); return; }
-
-      const users = getUsers();
-      const idx = users.findIndex(x=>x.id===oldId);
-      if(idx < 0){ toast("사용자를 찾을 수 없음"); return; }
-
-      const d = userDrafts.get(oldId);
-      if(!d){ toast("수정값이 없습니다"); return; }
-
-      const idNew = (d.idNew || "").trim();
-      const pwNew = (d.pwNew || "").trim();
-      const companyNew = (d.companyNew || "").trim();
-      const roleNew = (d.roleNew || "").trim();
-
-      if(!idNew || idNew.length < 2){ toast("아이디 오류", "2글자 이상"); return; }
-      if(!pwNew || pwNew.length < 2){ toast("비번 오류", "2글자 이상"); return; }
-      if(!companyNew){ toast("업체명 필수"); return; }
-      if(!ROLE_LABEL[roleNew]){ toast("역할 오류"); return; }
-
-      if(idNew === MASTER_ID){ toast("불가", "마스터 계정 아이디는 사용할 수 없습니다."); return; }
-
-      // ✅ ADMIN으로 바꾸는 것도 마스터만 가능
-      if(roleNew === "ADMIN" && !isMasterAccount(admin)){
-        toast("권한 없음", "관리자(ADMIN) 권한 부여/변경은 마스터 계정만 가능합니다.");
-        return;
-      }
-
-      if(idNew !== oldId && users.some(u=>u.id===idNew)){
-        toast("아이디 중복", "다른 아이디로 변경하세요.");
-        return;
-      }
-
-      const before = users[idx];
-      users[idx] = { ...before, id: idNew, pw: pwNew, companyName: companyNew, role: roleNew };
-      setUsers(users);
-
-      if(idNew !== oldId){
-        const slots = getSlots();
-        let changed = 0;
-        for(const s of slots){
-          if(s.userId === oldId){
-            s.userId = idNew;
-            changed++;
-          }
-        }
-        setSlots(slots);
-
-        const sess = getSession();
-        if(sess && sess.id === oldId){
-          setSession({ ...sess, id: idNew });
-        }
-
-        logEvent(`계정 수정: ${oldId} → ${idNew} (슬롯 ${changed}개 userId 변경)`);
-      } else {
-        logEvent(`계정 수정: ${oldId} (pw/company/role 변경)`);
-      }
-
-      toast("수정 저장 완료", `${companyNew}(${idNew})`);
-      editingUserIds.delete(oldId);
-      userDrafts.delete(oldId);
-
-      renderUsers();
-      renderAssign();
-      if(activePage==="slots") renderSlotsPage();
-      if(activePage==="dash") renderDash();
-    }
-
-    function renderUsers(){
-      const user = me();
-      if(user.role!=="ADMIN"){ activePage="slots"; render(); return; }
+    async function renderUsers(){
+      if(current.role!=="ADMIN"){ activePage="slots"; render(); return; }
 
       const tb = document.getElementById("userTbody");
-
-      // ✅ 마스터를 제외한 모든 계정 표시(광고주/대행사/총판 + 관리자(ADMIN))
-      const users = getUsers().filter(u => !(u.role==="ADMIN" && u.id===MASTER_ID));
+      const users = usersCache.filter(u => !(u.role==="ADMIN" && u.id===MASTER_ID));
 
       tb.innerHTML = "";
       users.forEach(u=>{
         const tr = document.createElement("tr");
-        const isEditing = editingUserIds.has(u.id);
-
-        if(!isEditing){
-          tr.innerHTML = `
-            <td style="font-weight:1200">${escapeHtml(u.id)}</td>
-            <td><span class="tag gray">${escapeHtml(ROLE_LABEL[u.role] || u.role)}</span></td>
-            <td class="muted" style="font-weight:1100">${escapeHtml(u.companyName||"")}</td>
-            <td class="muted" style="font-weight:1100">${escapeHtml(u.pw||"")}</td>
-            <td>
-              <button class="btn mini btnGreen" data-uact="edit" data-uid="${escapeHtml(u.id)}">수정</button>
-            </td>
-            <td><button class="btn mini btnRed" data-del="${escapeHtml(u.id)}">삭제</button></td>
-          `;
-        } else {
-          const d = ensureUserDraft(u);
-          const canSeeAdminOpt = isMasterAccount(user); // 마스터만 ADMIN 선택 가능
-          tr.innerHTML = `
-            <td>
-              <input class="tInput" data-uf="idNew" data-uid="${escapeHtml(u.id)}" value="${escapeHtml(d.idNew)}" placeholder="아이디" />
-            </td>
-            <td>
-              <select class="tInput" style="min-width:160px" data-uf="roleNew" data-uid="${escapeHtml(u.id)}">
-                <option value="ADVERTISER" ${d.roleNew==="ADVERTISER"?"selected":""}>광고주</option>
-                <option value="AGENCY" ${d.roleNew==="AGENCY"?"selected":""}>대행사</option>
-                <option value="DISTRIBUTOR" ${d.roleNew==="DISTRIBUTOR"?"selected":""}>총판사</option>
-                ${canSeeAdminOpt ? `<option value="ADMIN" ${d.roleNew==="ADMIN"?"selected":""}>관리자(ADMIN)</option>` : ``}
-              </select>
-            </td>
-            <td>
-              <input class="tInput" data-uf="companyNew" data-uid="${escapeHtml(u.id)}" value="${escapeHtml(d.companyNew)}" placeholder="업체명" />
-            </td>
-            <td>
-              <input class="tInput" data-uf="pwNew" data-uid="${escapeHtml(u.id)}" value="${escapeHtml(d.pwNew)}" placeholder="비밀번호" />
-            </td>
-            <td>
-              <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn mini btnNeon" data-uact="save" data-uid="${escapeHtml(u.id)}">저장</button>
-                <button class="btn mini" data-uact="cancel" data-uid="${escapeHtml(u.id)}">취소</button>
-              </div>
-            </td>
-            <td><button class="btn mini btnRed" data-del="${escapeHtml(u.id)}">삭제</button></td>
-          `;
-        }
-        tb.appendChild(tr);
-      });
-
-      tb.querySelectorAll('[data-uf]').forEach(el=>{
-        const oldId = el.getAttribute("data-uid");
-        const f = el.getAttribute("data-uf");
-
-        const handler = ()=>{
-          if(!userDrafts.has(oldId)) userDrafts.set(oldId, {idNew:oldId,pwNew:"",companyNew:"",roleNew:"ADVERTISER"});
-          const d = userDrafts.get(oldId);
-          if(f==="idNew") d.idNew = el.value;
-          if(f==="pwNew") d.pwNew = el.value;
-          if(f==="companyNew") d.companyNew = el.value;
-          if(f==="roleNew") d.roleNew = el.value;
-        };
-
-        el.addEventListener("input", handler);
-        el.addEventListener("change", handler);
-      });
-
-      tb.querySelectorAll("button[data-uact]").forEach(btn=>{
-        btn.addEventListener("click", ()=>{
-          const act = btn.getAttribute("data-uact");
-          const uid = btn.getAttribute("data-uid");
-
-          if(act==="edit"){
-            editingUserIds.add(uid);
-            const u = getUsers().find(x=>x.id===uid);
-            if(u) ensureUserDraft(u);
-            renderUsers();
-            toast("사용자 수정모드", "아이디/비번/업체명/역할 수정 가능");
-            return;
-          }
-          if(act==="cancel"){
-            editingUserIds.delete(uid);
-            userDrafts.delete(uid);
-            renderUsers();
-            return;
-          }
-          if(act==="save"){
-            saveUserInline(uid);
-            return;
-          }
-        });
-      });
-
-      tb.querySelectorAll("button[data-del]").forEach(btn=>{
-        btn.addEventListener("click", ()=>{
-          const id = btn.getAttribute("data-del");
-          deleteUser(id);
-        });
-      });
-    }
-
-    function renderCleanup(){
-      const user = me();
-      if(user.role!=="ADMIN"){ activePage="slots"; render(); return; }
-
-      const slots = updateExpired([...getSlots()]);
-
-      const cleanUser = document.getElementById("cleanUser");
-      const users = getUsers().filter(u=>!(u.role==="ADMIN" && u.id===MASTER_ID));
-      const prev = cleanUser.value || "ALL";
-      cleanUser.innerHTML =
-        `<option value="ALL">전체</option>` +
-        users.map(u=>`<option value="${escapeHtml(u.id)}">${escapeHtml(displayUserName(u.id))}</option>`).join("");
-      cleanUser.value = prev;
-
-      const q = (document.getElementById("cleanSearch").value || "").trim().toLowerCase();
-      const ufi = cleanUser.value || "ALL";
-
-      let rows = slots.filter(s => !!s.withdrawPending);
-      if(ufi !== "ALL") rows = rows.filter(s=>s.userId===ufi);
-
-      if(q){
-        rows = rows.filter(s => {
-          const storeId = (s.storeId || "").toLowerCase();
-          const linkAll = ((s.link||"") + " " + (s.catalogLink||"")).toLowerCase();
-          return (
-            (s.userId||"").toLowerCase().includes(q) ||
-            (s.keyword||"").toLowerCase().includes(q) ||
-            linkAll.includes(q) ||
-            (s.memo||"").toLowerCase().includes(q) ||
-            (displayUserName(s.userId||"").toLowerCase().includes(q)) ||
-            storeId.includes(q)
-          );
-        });
-      }
-
-      rows.sort((a,b)=> (a.no||0)-(b.no||0));
-
-      const tb = document.getElementById("cleanTbody");
-      tb.innerHTML = "";
-      rows.forEach(s=>{
-        const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><input class="chk" type="checkbox" disabled /></td>
-          <td>${escapeHtml(String(s.no||"-"))}</td>
-          <td style="font-weight:1200">${escapeHtml(displayUserName(s.userId||"-"))}</td>
-          <td><span class="tag gold typeTag">${escapeHtml(typeDisplay(s.type))}</span></td>
-          <td>${storeIdTagHtml(s)}</td>
-          <td>${slotStateTag(s)}</td>
-          <td>${escapeHtml(s.keyword||"")}</td>
-          <td>${renderLinkCellReadOnly(s)}</td>
-          <td>${escapeHtml(s.memo||"")}</td>
-          <td><span class="muted">-</span></td>
+          <td style="font-weight:1200">${escapeHtml(u.id)}</td>
+          <td><span class="tag gray">${escapeHtml(ROLE_LABEL[u.role] || u.role)}</span></td>
+          <td class="muted" style="font-weight:1100">${escapeHtml(u.company_name||"")}</td>
+          <td><span class="tag green">정상</span></td>
+          <td><span class="muted">비번표시/삭제/수정은 다음버전(Edge Function)로 추가</span></td>
         `;
         tb.appendChild(tr);
       });
     }
 
+    /******************************************************************
+     * ✅ 대시/로그
+     ******************************************************************/
     function renderDash(){
-      const user = me();
-      const all = updateExpired([...getSlots()]);
-      const visible = visibleSlotsForUser(all, user);
+      const all = updateExpired([...(slotsCache||[])]);
+      const visible = visibleSlotsForUser(all);
 
       const opened = visible.filter(s=>s.opened && !s.expired).length;
       const saved = visible.filter(s=>s.saved && !s.expired).length;
@@ -1983,11 +1500,11 @@
       const kpi = document.getElementById("kpi");
       kpi.innerHTML = "";
 
-      const items = (user.role==="ADMIN")
+      const items = (current.role==="ADMIN")
         ? [
             { v: String(all.length), k: "전체 슬롯" },
-            { v: String(all.filter(s=>s.withdrawPending).length), k: "철회 대기" },
-            { v: String(all.filter(s=>s.hiddenByAdmin && !s.withdrawPending && !s.expired).length), k: "숨김" },
+            { v: String(all.filter(s=>s.withdraw_pending).length), k: "철회 대기" },
+            { v: String(all.filter(s=>s.hidden_by_admin && !s.withdraw_pending && !s.expired).length), k: "숨김" },
             { v: String(all.filter(s=>s.saved && !s.expired).length), k: "정상" },
           ]
         : [
@@ -2006,86 +1523,16 @@
     }
 
     function renderLogs(){
-      const user = me();
       const logs = getLogs();
-      const box = document.getElementById("logBox");
-      const view = (user.role==="ADMIN")
-        ? logs
-        : logs.filter(line => line.includes(`로그인: ${user.id}`) || line.includes(`로그아웃: ${user.id}`) || line.includes(`user=${user.id}`));
-      box.textContent = view.length ? view.join("\n") : "로그가 없습니다.";
+      document.getElementById("logBox").textContent = logs.length ? logs.join("\n") : "로그가 없습니다.";
     }
 
+    /******************************************************************
+     * ✅ 데모는 Supabase에 안 넣음(오해방지)
+     ******************************************************************/
     function seedDemoData(){
-      const user = me();
-      if(user.role!=="ADMIN"){ toast("관리자만 가능"); return; }
-
-      let users = getUsers();
-      const sample = [
-        { id:"brother_topbiz", role:"ADVERTISER", pw:"1234", companyName:"브라더탑비즈" },
-        { id:"agency_01", role:"AGENCY", pw:"1234", companyName:"에이전시01" },
-        { id:"dist_01", role:"DISTRIBUTOR", pw:"1234", companyName:"총판01" },
-      ];
-      for(const s of sample){
-        if(!users.some(u=>u.id===s.id)){
-          users.push({ id:s.id, pw:s.pw, role:s.role, companyName:s.companyName, createdAt: nowISO() });
-        }
-      }
-      setUsers(users);
-
-      let slots = getSlots();
-      const maxNo = slots.reduce((m,s)=>Math.max(m, s.no||0), 0);
-      let curNo = maxNo;
-
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      const start = d.toISOString().slice(0,10);
-      const end = addDaysToDateStr(start, 10);
-
-      function make(uid, opened, saved, keyword, link, catalogLink, memo, hiddenByAdmin, withdrawPending, type, storeId){
-        curNo++;
-        return {
-          id: "S" + Math.random().toString(16).slice(2) + Date.now().toString(16),
-          no: curNo,
-          userId: uid,
-          type: type || "스퀘어(단일)",
-          startDate: start,
-          endDate: end,
-          opened: !!opened,
-          saved: !!saved,
-          hiddenByAdmin: !!hiddenByAdmin,
-          withdrawPending: !!withdrawPending,
-          keyword: keyword||"",
-          link: link||"",
-          catalogLink: catalogLink||"",
-          memo: memo||"",
-          storeId: storeId || "",
-          expired: false,
-          createdAt: nowISO()
-        };
-      }
-
-      slots.push(
-        make("brother_topbiz", true, true, "고체탈취제", "https://smartstore.naver.com/brother-topbiz/products/5188623023", "", "샘플", false, false, "스퀘어(단일)", "brother-topbiz"),
-        make("agency_01", true, true, "블라우풍트", "https://brand.naver.com/blaupunkt/products/11492489890", "https://search.shopping.naver.com/catalog/55254309041", "원부 샘플", false, false, "스퀘어(원부)", ""),
-        make("dist_01", false, false, "", "", "", "", false, false, "스퀘어(원부)", ""),
-        make("dist_01", false, false, "삭제대기샘플", "https://www.coupang.com/vp/products/9181711746", "", "철회 대기 샘플", true, true, "스퀘어(단일)", "")
-      );
-      setSlots(slots);
-
-      logEvent("데모 데이터 삽입");
-      toast("데모 데이터 삽입 완료", "슬롯관리에서 확인하세요.");
-      renderAssign();
-      activePage="slots";
-      render();
+      toast("데모 비활성", "이 버전은 Supabase 실데이터 기반입니다.");
     }
-
-    (function(){
-      ensureSeed();
-      const sess = getSession();
-      document.getElementById("loginView").style.display = sess ? "none" : "grid";
-      document.getElementById("appView").style.display = sess ? "block" : "none";
-      mount();
-    })();
   </script>
 </body>
 </html>
