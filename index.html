@@ -446,8 +446,8 @@
       <div class="loginBody">
         <div class="row">
           <div class="field">
-            <div class="label">아이디</div>
-            <input id="loginId" class="input" placeholder="아이디" autocomplete="username" />
+            <div class="label">아이디 또는 이메일</div>
+            <input id="loginId" class="input" placeholder="예: syl17300 또는 syl17300@square.local" autocomplete="username" />
           </div>
         </div>
         <div class="row">
@@ -458,6 +458,9 @@
         </div>
         <div class="row" style="justify-content:flex-end;align-items:center">
           <button class="btn btnNeon" onclick="login()">로그인</button>
+        </div>
+        <div class="hint" style="margin-top:10px">
+          ※ 아이디만 입력해도 자동으로 이메일로 변환되어 로그인됩니다.
         </div>
       </div>
     </div>
@@ -795,7 +798,7 @@
       const el = document.getElementById("toast");
       el.innerHTML = `<div>${escapeHtml(title)}</div>${sub ? `<div class="s">${escapeHtml(sub)}</div>` : ""}`;
       el.classList.add("show");
-      setTimeout(()=>el.classList.remove("show"), 2800);
+      setTimeout(()=>el.classList.remove("show"), 3000);
     }
 
     function fmtDT(iso){
@@ -809,8 +812,14 @@
       return `${yy}-${mm}-${dd} ${hh}:${mi}`;
     }
 
-    function toEmail(loginId){
-      return `${loginId}@${EMAIL_DOMAIN}`;
+    // ✅ (핵심) 아이디/이메일 입력을 이메일로 정규화
+    function toEmail(input){
+      const v = (input || "").trim().toLowerCase();
+      if(!v) return "";
+      // 이미 이메일이면 그대로
+      if(v.includes("@")) return v;
+      // 아이디면 도메인 붙여서 이메일로
+      return `${v}@${EMAIL_DOMAIN}`;
     }
 
     function addDaysToDateStr(dateStr, days){
@@ -848,19 +857,24 @@
      * 2) 상태(메모리)
      ***********************/
     const ROLE_LABEL = {
+      "MASTER":"마스터",
       "ADMIN":"관리자",
       "ADVERTISER":"광고주",
       "AGENCY":"대행사",
       "DISTRIBUTOR":"총판사"
     };
 
+    // ✅ MASTER는 ADMIN처럼 취급(권한/페이지 접근)
+    function isAdminLike(p){ return !!p && (p.role === "ADMIN" || p.role === "MASTER"); }
+    function isMasterAccount(p){ return !!p && p.login_id === MASTER_ID && (p.role === "MASTER" || p.role === "ADMIN"); }
+
     const PAGES = [
-      { key:"dash", label:"대시보드", roles:["ADMIN","ADVERTISER","AGENCY","DISTRIBUTOR"] },
-      { key:"slots", label:"슬롯관리", roles:["ADMIN","ADVERTISER","AGENCY","DISTRIBUTOR"] },
-      { key:"assign", label:"슬롯부여", roles:["ADMIN"] },
-      { key:"users", label:"사용자 관리", roles:["ADMIN"] },
-      { key:"cleanup", label:"슬롯 삭제", roles:["ADMIN"] },
-      { key:"logs", label:"로그", roles:["ADMIN","ADVERTISER","AGENCY","DISTRIBUTOR"] },
+      { key:"dash", label:"대시보드", roles:["ADMIN","MASTER","ADVERTISER","AGENCY","DISTRIBUTOR"] },
+      { key:"slots", label:"슬롯관리", roles:["ADMIN","MASTER","ADVERTISER","AGENCY","DISTRIBUTOR"] },
+      { key:"assign", label:"슬롯부여", roles:["ADMIN","MASTER"] },
+      { key:"users", label:"사용자 관리", roles:["ADMIN","MASTER"] },
+      { key:"cleanup", label:"슬롯 삭제", roles:["ADMIN","MASTER"] },
+      { key:"logs", label:"로그", roles:["ADMIN","MASTER","ADVERTISER","AGENCY","DISTRIBUTOR"] },
     ];
     let activePage = "dash";
 
@@ -895,10 +909,6 @@
       if(logArr.length > 400) logArr.pop();
     }
 
-    function isMasterAccount(p){
-      return !!p && p.role === "ADMIN" && p.login_id === MASTER_ID;
-    }
-
     /***********************
      * 3) DB 접근 함수 (app_users 에러 자동 우회)
      ***********************/
@@ -918,7 +928,10 @@
       {
         const { data, error } = await fetchProfileFromTable(PROFILE_TABLE_PRIMARY);
         if(!error) return data || null;
+
         console.warn("profiles load error:", error);
+        // ✅ RLS/권한 에러는 "프로필 없음"이 아니라 "조회 실패"로 보여줘야 함
+        toast("프로필 조회 실패", error.message || "profiles 조회 오류");
       }
 
       // 2) fallback: app_users (있으면 사용)
@@ -936,7 +949,7 @@
     }
 
     async function fetchUsersIfAdmin(){
-      if(!profile || profile.role !== "ADMIN") { usersCache = [profile].filter(Boolean); return; }
+      if(!profile || !isAdminLike(profile)) { usersCache = [profile].filter(Boolean); return; }
 
       const { data, error } = await sb
         .from(PROFILE_TABLE_PRIMARY)
@@ -1071,12 +1084,13 @@
      * 4) 로그인/세션
      ***********************/
     async function login(){
-      const id = document.getElementById("loginId").value.trim();
+      const raw = document.getElementById("loginId").value.trim();
       const pw = document.getElementById("loginPw").value.trim();
-      if(!id || !pw){ toast("입력 필요","아이디/비밀번호를 입력하세요."); return; }
+      if(!raw || !pw){ toast("입력 필요","아이디/비밀번호를 입력하세요."); return; }
 
-      const email = toEmail(id);
-      logEvent(`로그인 시도: ${id} → ${email}`);
+      // ✅ (핵심) 아이디/이메일 자동 처리
+      const email = toEmail(raw);
+      logEvent(`로그인 시도: ${raw} → ${email}`);
 
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
       if(error){
@@ -1089,8 +1103,10 @@
 
       profile = await fetchMyProfile();
       if(!profile){
+        // ✅ 여기서부터는 진짜 "프로필 row가 없는 경우" 또는 "RLS로 조회 실패"로만 나옴
         logEvent(`프로필 로드 실패: uid=${authUser?.id || "-"}`);
-        toast("프로필 없음", "Auth는 성공했지만 프로필 테이블에서 사용자를 찾지 못했습니다.\n(테이블/정책/RLS 확인 필요)");
+        toast("프로필 없음/조회 실패", "Auth는 성공했지만 프로필을 불러오지 못했습니다.\n- profiles에 user_id row가 있는지\n- RLS에서 SELECT self가 허용인지 확인");
+        // signOut은 유지(안전)
         await sb.auth.signOut();
         authUser = null;
         return;
@@ -1198,7 +1214,7 @@
      ***********************/
     function visibleSlotsForUser(allSlots){
       const slots = allSlots.map(s=>({ ...s, expired: computeExpired(s) }));
-      if(profile.role==="ADMIN") return slots;
+      if(isAdminLike(profile)) return slots;
       return slots.filter(s =>
         (s.user_uid === authUser.id) &&
         !s.hiddenByAdmin &&
@@ -1208,13 +1224,12 @@
     }
 
     function renderSlotsPage(){
-      /* (원본 그대로) */
       const all = slotsCache.map(s=>({ ...s, expired: computeExpired(s) }));
       const slots = visibleSlotsForUser(all);
 
       const uf = document.getElementById("slotUserFilter");
-      if(profile.role==="ADMIN"){
-        const targets = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID));
+      if(isAdminLike(profile)){
+        const targets = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID) && !(u.role==="MASTER" && u.login_id===MASTER_ID));
         const current = uf.value || "ALL";
         uf.innerHTML =
           `<option value="ALL">전체</option>` +
@@ -1228,7 +1243,7 @@
       }
 
       const hint = document.getElementById("slotHint");
-      hint.innerHTML = (profile.role==="ADMIN")
+      hint.innerHTML = (isAdminLike(profile))
         ? `관리자 모드: 전체 슬롯 조회 · 사용자에게는 <b style="color:rgba(255,255,255,.95)">오픈/정상</b> 슬롯만 노출`
         : `사용자 모드: <b style="color:rgba(255,255,255,.95)">오픈됨/정상</b> 슬롯만 보입니다.`;
 
@@ -1238,7 +1253,7 @@
 
       let rows = [...slots];
 
-      if(profile.role==="ADMIN" && ufi !== "ALL"){
+      if(isAdminLike(profile) && ufi !== "ALL"){
         rows = rows.filter(s => (s.user_uid === ufi));
       }
 
@@ -1253,7 +1268,7 @@
         rows = rows.filter(s => {
           const storeId = (s.storeId || "").toLowerCase();
           const linkAll = ((s.link||"") + " " + (s.catalogLink||"")).toLowerCase();
-          const uname = (profile.role==="ADMIN")
+          const uname = (isAdminLike(profile))
             ? (usersCache.find(u=>u.user_id===s.user_uid)?.company_name || "") + " " + (usersCache.find(u=>u.user_id===s.user_uid)?.login_id || "")
             : (profile.company_name||"") + " " + (profile.login_id||"");
           return (
@@ -1278,13 +1293,13 @@
         const canEdit =
           (!s.expired) &&
           (!s.withdrawPending) &&
-          (profile.role==="ADMIN" || s.user_uid === authUser.id) &&
+          (isAdminLike(profile) || s.user_uid === authUser.id) &&
           (s.opened || s.saved);
 
         const isEditing = editingSlotIds.has(s.id);
 
         let manage = "";
-        if(profile.role==="ADMIN"){
+        if(isAdminLike(profile)){
           const withdrawBtn = (!s.expired && !s.withdrawPending)
             ? `<button class="btn mini btnRed" data-act="withdraw" data-id="${escapeHtml(s.id)}">철회</button>`
             : "";
@@ -1354,7 +1369,7 @@
 
         const expSoon = isExpiringTomorrow(s.endDate);
 
-        const who = (profile.role==="ADMIN")
+        const who = (isAdminLike(profile))
           ? (usersCache.find(u=>u.user_id===s.user_uid)
               ? ((usersCache.find(u=>u.user_id===s.user_uid).company_name||"")
                   ? `${usersCache.find(u=>u.user_id===s.user_uid).company_name}(${usersCache.find(u=>u.user_id===s.user_uid).login_id})`
@@ -1421,7 +1436,6 @@
     }
 
     async function saveSlotInline(id){
-      /* (원본 그대로) */
       const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
       if(computeExpired(s)){ toast("만료된 슬롯"); return; }
@@ -1503,7 +1517,7 @@
     }
 
     async function withdrawSlot(id){
-      if(profile.role !== "ADMIN"){ toast("권한 없음"); return; }
+      if(!isAdminLike(profile)){ toast("권한 없음"); return; }
       const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯 없음"); return; }
       if(computeExpired(s)){ toast("만료된 슬롯"); return; }
@@ -1542,7 +1556,7 @@
     }
 
     async function extendSlotUI(id){
-      if(profile.role !== "ADMIN"){ toast("권한 없음"); return; }
+      if(!isAdminLike(profile)){ toast("권한 없음"); return; }
       const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯 없음"); return; }
       if(!(s.opened && s.saved)){ toast("연장 불가", "오픈+저장완료 슬롯만 연장됩니다."); return; }
@@ -1575,10 +1589,10 @@
     }
 
     function renderAssign(){
-      if(profile.role!=="ADMIN"){ activePage="slots"; render(); return; }
+      if(!isAdminLike(profile)){ activePage="slots"; render(); return; }
 
       const sel = document.getElementById("assign_user");
-      const targets = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID));
+      const targets = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID) && !(u.role==="MASTER" && u.login_id===MASTER_ID));
       sel.innerHTML = targets.length
         ? targets.map(u=>`<option value="${escapeHtml(u.user_id)}">${escapeHtml((u.company_name||"") ? `${u.company_name}(${u.login_id})` : u.login_id)} (${ROLE_LABEL[u.role]||u.role})</option>`).join("")
         : `<option value="">(사용자 계정이 없습니다)</option>`;
@@ -1604,8 +1618,7 @@
     }
 
     async function allocateSlots(){
-      /* (원본 그대로) */
-      if(profile.role!=="ADMIN"){ toast("권한 없음"); return; }
+      if(!isAdminLike(profile)){ toast("권한 없음"); return; }
 
       const uid = document.getElementById("assign_user").value;
       const type = document.getElementById("assign_type").value || "스퀘어(단일)";
@@ -1660,8 +1673,7 @@
      * 8) 사용자(계정) 생성/수정/삭제 (관리자)
      ***********************/
     async function createUser(){
-      /* (네 코드 그대로 유지, delete만 수정 대상) */
-      if(profile.role!=="ADMIN"){ toast("권한 없음"); return; }
+      if(!isAdminLike(profile)){ toast("권한 없음"); return; }
 
       const login_id = document.getElementById("u_id").value.trim();
       const password = document.getElementById("u_pw").value.trim();
@@ -1757,8 +1769,7 @@
     }
 
     async function saveUserInline(userId){
-      /* (원본 그대로) */
-      if(profile.role!=="ADMIN"){ toast("권한 없음"); return; }
+      if(!isAdminLike(profile)){ toast("권한 없음"); return; }
       const u = usersCache.find(x=>x.user_id===userId);
       if(!u){ toast("사용자를 찾을 수 없음"); return; }
       if(u.login_id === MASTER_ID){ toast("불가","마스터 계정은 수정 불가"); return; }
@@ -1805,11 +1816,8 @@
       if(activePage==="slots") await refresh();
     }
 
-    /***********************
-     * ✅✅✅ 여기만 수정됨: deleteUser를 fetch 직접호출로 통일
-     ***********************/
     async function deleteUser(userId){
-      if(profile.role!=="ADMIN"){ toast("권한 없음"); return; }
+      if(!isAdminLike(profile)){ toast("권한 없음"); return; }
       if(!isMasterAccount(profile)){
         toast("권한 없음", "삭제는 마스터 계정만 가능합니다.");
         return;
@@ -1874,11 +1882,10 @@
     }
 
     function renderUsers(){
-      /* (원본 그대로) */
-      if(profile.role!=="ADMIN"){ activePage="slots"; render(); return; }
+      if(!isAdminLike(profile)){ activePage="slots"; render(); return; }
 
       const tb = document.getElementById("userTbody");
-      const users = usersCache.filter(u => !(u.role==="ADMIN" && u.login_id===MASTER_ID));
+      const users = usersCache.filter(u => !(u.role==="ADMIN" && u.login_id===MASTER_ID) && !(u.role==="MASTER" && u.login_id===MASTER_ID));
 
       tb.innerHTML = "";
       users.forEach(u=>{
@@ -1981,13 +1988,12 @@
      * 9) Cleanup / Dash / Logs
      ***********************/
     function renderCleanup(){
-      /* (원본 그대로) */
-      if(profile.role!=="ADMIN"){ activePage="slots"; render(); return; }
+      if(!isAdminLike(profile)){ activePage="slots"; render(); return; }
 
       const slots = slotsCache.map(s=>({ ...s, expired: computeExpired(s) })).filter(s=>!!s.withdrawPending);
 
       const cleanUser = document.getElementById("cleanUser");
-      const users = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID));
+      const users = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID) && !(u.role==="MASTER" && u.login_id===MASTER_ID));
       const prev = cleanUser.value || "ALL";
       cleanUser.innerHTML =
         `<option value="ALL">전체</option>` +
@@ -2064,7 +2070,7 @@
       const kpi = document.getElementById("kpi");
       kpi.innerHTML = "";
 
-      const items = (profile.role==="ADMIN")
+      const items = (isAdminLike(profile))
         ? [
             { v: String(all.length), k: "전체 슬롯" },
             { v: String(all.filter(s=>s.withdrawPending).length), k: "철회 대기" },
