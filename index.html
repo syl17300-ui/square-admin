@@ -1258,9 +1258,24 @@
       toast("새로고침 완료");
     }
 
-    /***********************
-     * 6) 슬롯 표시/수정/관리
-     ***********************/
+/***********************
+ * 6) 슬롯 표시/수정/관리
+ ***********************/
+
+// 🔥 여기다가 추가
+function getEditInputsValue(slotId){
+  const pick = (f) => {
+    const el = document.querySelector(`#slotTbody [data-id="${slotId}"][data-f="${f}"]`);
+    return el ? (el.value || "") : "";
+  };
+  return {
+    kw: pick("kw"),
+    link: pick("link"),
+    catalogLink: pick("catalogLink"),
+    memo: pick("memo"),
+  };
+}
+
     function visibleSlotsForUser(allSlots){
       const slots = allSlots.map(s=>({ ...s, expired: computeExpired(s) }));
       if(isAdminLike(profile)) return slots;
@@ -1544,59 +1559,77 @@
       selAll.checked = allChecked;
     }
 
-    async function saveSlotInline(id){
-      const s = slotsCache.find(x=>x.id===id);
-      if(!s){ toast("슬롯을 찾을 수 없음"); return; }
-      if(computeExpired(s)){ toast("만료된 슬롯"); return; }
-      if(s.withdrawPending){ toast("철회 대기 슬롯"); return; }
+async function saveSlotInline(id){
+  const s = slotsCache.find(x=>x.id===id);
+  if(!s){ toast("슬롯을 찾을 수 없음"); return; }
+  if(computeExpired(s)){ toast("만료된 슬롯"); return; }
+  if(s.withdrawPending){ toast("철회 대기 슬롯"); return; }
 
-      const d = slotDrafts.get(id) || { kw: s.keyword||"", link: s.link||"", catalogLink: s.catalogLink||"", memo: s.memo||"" };
-      const kw = (d.kw || "").trim();
-      const link = (d.link || "").trim();
-      const catalogLink = (d.catalogLink || "").trim();
-      const memo = (d.memo || "").trim();
+  // ✅ 저장 시점에 DOM에서 최신 값 직접 읽기 (slotDrafts 의존 제거)
+  const domVals = getEditInputsValue(id);
 
-      const wonbu = isTypeWonbu(s.type);
-      if(!kw || !link){
-        toast("저장 실패", "키워드/상품링크는 필수입니다.");
-        return;
-      }
-      if(wonbu && !catalogLink){
-        toast("저장 실패", "원부 타입은 카탈로그 링크도 필수입니다.");
-        return;
-      }
+  // fallback: 혹시 DOM이 없으면 기존 draft/원본 사용
+  const d = slotDrafts.get(id) || { kw: s.keyword||"", link: s.link||"", catalogLink: s.catalogLink||"", memo: s.memo||"" };
 
-      const storeId = extractStoreId(link);
+  const kw = (domVals.kw || d.kw || "").trim();
+  const link = (domVals.link || d.link || "").trim();
+  const catalogLink = (domVals.catalogLink || d.catalogLink || "").trim();
+  const memo = (domVals.memo || d.memo || "").trim();
 
-      const payload = {
-        keyword: kw,
-        link: link,
-        catalog_link: wonbu ? catalogLink : "",
-        memo: memo,
-        store_id: storeId,
-        opened: true,
-        saved: true,
-        hidden_by_admin: false,
-        withdraw_pending: false
-      };
+  const wonbu = isTypeWonbu(s.type);
 
-      const { error } = await sb.from("slots").update(payload).eq("id", id);
-      if(error){
-        console.error(error);
-        toast("저장 실패", error.message);
-        return;
-      }
+  if(!kw || !link){
+    toast("저장 실패", "키워드/상품링크는 필수입니다.");
+    return;
+  }
+  if(wonbu && !catalogLink){
+    toast("저장 실패", "원부 타입은 카탈로그 링크도 필수입니다.");
+    return;
+  }
 
-      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, storeId=${storeId||"-"}`);
-      toast("저장 완료", storeId ? `스토어ID: ${storeId}` : "스토어ID 추출 실패(링크 확인)");
+  const storeId = extractStoreId(link);
 
-      editingSlotIds.delete(id);
-      slotDrafts.delete(id);
+  const payload = {
+    keyword: kw,
+    link: link,
+    catalog_link: wonbu ? catalogLink : "",
+    memo: memo,
+    store_id: storeId,
+    opened: true,
+    saved: true,
+    hidden_by_admin: false,
+    withdraw_pending: false
+  };
 
-      await fetchSlots();
-      renderSlotsPage();
-      if(activePage==="dash") renderDash();
-    }
+  // ✅ select()를 붙이면 업데이트가 실제로 됐는지/권한 문제인지 더 확실히 잡힘
+  const { data, error } = await sb
+    .from("slots")
+    .update(payload)
+    .eq("id", id)
+    .select();
+
+  if(error){
+    console.error(error);
+    toast("저장 실패", error.message);
+    return;
+  }
+
+  if(!data || !data.length){
+    // RLS 때문에 update가 0행 처리되는 경우를 확실히 사용자에게 보여줌
+    toast("저장 실패", "업데이트가 0건입니다. (RLS/권한 정책에서 update가 막혔을 가능성이 큽니다)");
+    return;
+  }
+
+  logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, storeId=${storeId||"-"}`);
+  toast("저장 완료", storeId ? `스토어ID: ${storeId}` : "스토어ID 추출 실패(링크 확인)");
+
+  editingSlotIds.delete(id);
+  slotDrafts.delete(id);
+
+  await fetchSlots();
+  renderSlotsPage();
+  if(activePage==="dash") renderDash();
+}
 
     async function openSlot(id){
       const { error } = await sb.from("slots").update({
