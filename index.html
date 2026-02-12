@@ -866,7 +866,13 @@
 
     // ✅ MASTER는 ADMIN처럼 취급(권한/페이지 접근)
     function isAdminLike(p){ return !!p && (p.role === "ADMIN" || p.role === "MASTER"); }
-    function isMasterAccount(p){ return !!p && p.login_id === MASTER_ID && (p.role === "MASTER" || p.role === "ADMIN"); }
+function isMasterAccount(p){
+  return !!p && (
+    p.role === "MASTER" ||
+    p.is_master === true ||
+    p.login_id === MASTER_ID
+  );
+}
 
     const PAGES = [
       { key:"dash", label:"대시보드", roles:["ADMIN","MASTER","ADVERTISER","AGENCY","DISTRIBUTOR"] },
