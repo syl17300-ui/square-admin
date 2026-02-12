@@ -374,7 +374,7 @@
       backdrop-filter: blur(12px);
     }
     .toast.show{display:block}
-    .toast .s{color:var(--muted);font-weight:900;font-size:13px;margin-top:7px}
+    .toast .s{color:var(--muted);font-weight:900;font-size:13px;margin-top:7px;white-space:pre-wrap}
 
     .tableScroll{
       overflow:auto;
@@ -549,7 +549,10 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width:52px">선택</th>
+                  <!-- ✅ 전체선택 체크박스 -->
+                  <th style="width:52px">
+                    <input id="slotSelectAll" class="chk" type="checkbox" title="전체 선택" />
+                  </th>
                   <th style="width:86px">번호</th>
                   <th style="width:260px">사용자</th>
                   <th style="width:120px">타입</th>
@@ -798,7 +801,7 @@
       const el = document.getElementById("toast");
       el.innerHTML = `<div>${escapeHtml(title)}</div>${sub ? `<div class="s">${escapeHtml(sub)}</div>` : ""}`;
       el.classList.add("show");
-      setTimeout(()=>el.classList.remove("show"), 3000);
+      setTimeout(()=>el.classList.remove("show"), 3200);
     }
 
     function fmtDT(iso){
@@ -816,9 +819,7 @@
     function toEmail(input){
       const v = (input || "").trim().toLowerCase();
       if(!v) return "";
-      // 이미 이메일이면 그대로
       if(v.includes("@")) return v;
-      // 아이디면 도메인 붙여서 이메일로
       return `${v}@${EMAIL_DOMAIN}`;
     }
 
@@ -866,13 +867,22 @@
 
     // ✅ MASTER는 ADMIN처럼 취급(권한/페이지 접근)
     function isAdminLike(p){ return !!p && (p.role === "ADMIN" || p.role === "MASTER"); }
-function isMasterAccount(p){
-  return !!p && (
-    p.role === "MASTER" ||
-    p.is_master === true ||
-    p.login_id === MASTER_ID
-  );
-}
+    function isMasterAccount(p){
+      return !!p && (
+        p.role === "MASTER" ||
+        p.is_master === true ||
+        p.login_id === MASTER_ID
+      );
+    }
+
+    // ✅ 관리자 삭제 가능 범위(마스터=전체 / 관리자=일반만)
+    function canDeleteUserByRole(targetProfile){
+      if(!profile || !isAdminLike(profile)) return false;
+      if(isMasterAccount(profile)) return true;
+      // ADMIN은 일반 계정만 삭제 가능
+      const r = (targetProfile?.role || "").toUpperCase();
+      return (r === "ADVERTISER" || r === "AGENCY" || r === "DISTRIBUTOR");
+    }
 
     const PAGES = [
       { key:"dash", label:"대시보드", roles:["ADMIN","MASTER","ADVERTISER","AGENCY","DISTRIBUTOR"] },
@@ -908,6 +918,9 @@ function isMasterAccount(p){
     let usersCache = [];      // profiles list (admin only)
     let slotsCache = [];      // slots list (RLS로 필터된 결과)
 
+    // ✅ 슬롯 선택(일괄처리)
+    const selectedSlotIds = new Set();
+
     // 간단 로그(화면 표시용)
     const logArr = [];
     function logEvent(msg){
@@ -936,7 +949,6 @@ function isMasterAccount(p){
         if(!error) return data || null;
 
         console.warn("profiles load error:", error);
-        // ✅ RLS/권한 에러는 "프로필 없음"이 아니라 "조회 실패"로 보여줘야 함
         toast("프로필 조회 실패", error.message || "profiles 조회 오류");
       }
 
@@ -1087,6 +1099,39 @@ function isMasterAccount(p){
     }
 
     /***********************
+     * ✅ 슬롯 일괄바/선택 로직
+     ***********************/
+    function updateSlotBulkBar(){
+      const bar = document.getElementById("slotBulkBar");
+      if(!bar) return;
+
+      if(!profile || !isAdminLike(profile)){
+        bar.innerHTML = "";
+        return;
+      }
+
+      const n = selectedSlotIds.size;
+      if(n === 0){
+        bar.innerHTML = `<span class="tag gray">선택된 슬롯 없음</span>`;
+        return;
+      }
+
+      bar.innerHTML = `
+        <span class="tag gold">선택 ${n}개</span>
+        <button class="btn mini btnNeon" onclick="bulkExtendSelected()">일괄 연장</button>
+        <button class="btn mini btnRed" onclick="bulkWithdrawSelected()">일괄 철회</button>
+        <button class="btn mini btnRed" onclick="bulkDeleteSelected()">일괄 완전삭제</button>
+        <button class="btn mini" onclick="clearSlotSelection()">선택 해제</button>
+      `;
+    }
+
+    function clearSlotSelection(){
+      selectedSlotIds.clear();
+      updateSlotBulkBar();
+      renderSlotsPage();
+    }
+
+    /***********************
      * 4) 로그인/세션
      ***********************/
     async function login(){
@@ -1094,7 +1139,6 @@ function isMasterAccount(p){
       const pw = document.getElementById("loginPw").value.trim();
       if(!raw || !pw){ toast("입력 필요","아이디/비밀번호를 입력하세요."); return; }
 
-      // ✅ (핵심) 아이디/이메일 자동 처리
       const email = toEmail(raw);
       logEvent(`로그인 시도: ${raw} → ${email}`);
 
@@ -1109,10 +1153,8 @@ function isMasterAccount(p){
 
       profile = await fetchMyProfile();
       if(!profile){
-        // ✅ 여기서부터는 진짜 "프로필 row가 없는 경우" 또는 "RLS로 조회 실패"로만 나옴
         logEvent(`프로필 로드 실패: uid=${authUser?.id || "-"}`);
         toast("프로필 없음/조회 실패", "Auth는 성공했지만 프로필을 불러오지 못했습니다.\n- profiles에 user_id row가 있는지\n- RLS에서 SELECT self가 허용인지 확인");
-        // signOut은 유지(안전)
         await sb.auth.signOut();
         authUser = null;
         return;
@@ -1132,6 +1174,7 @@ function isMasterAccount(p){
       usersCache = [];
       slotsCache = [];
       activePage = "dash";
+      selectedSlotIds.clear();
       mount();
     }
 
@@ -1274,9 +1317,10 @@ function isMasterAccount(p){
         rows = rows.filter(s => {
           const storeId = (s.storeId || "").toLowerCase();
           const linkAll = ((s.link||"") + " " + (s.catalogLink||"")).toLowerCase();
+          const u = usersCache.find(u=>u.user_id===s.user_uid);
           const uname = (isAdminLike(profile))
-            ? (usersCache.find(u=>u.user_id===s.user_uid)?.company_name || "") + " " + (usersCache.find(u=>u.user_id===s.user_uid)?.login_id || "")
-            : (profile.company_name||"") + " " + (profile.login_id||"");
+            ? ((u?.company_name || "") + " " + (u?.login_id || ""))
+            : ((profile.company_name||"") + " " + (profile.login_id||""));
           return (
             (String(s.no||"").includes(q)) ||
             (s.keyword||"").toLowerCase().includes(q) ||
@@ -1296,11 +1340,12 @@ function isMasterAccount(p){
       for(const s of rows){
         const tr = document.createElement("tr");
 
+        // ✅ 관리자/마스터는 "부여됨" 상태도 편집 가능
         const canEdit =
           (!s.expired) &&
           (!s.withdrawPending) &&
           (isAdminLike(profile) || s.user_uid === authUser.id) &&
-          (s.opened || s.saved);
+          (isAdminLike(profile) ? true : (s.opened || s.saved));
 
         const isEditing = editingSlotIds.has(s.id);
 
@@ -1375,16 +1420,15 @@ function isMasterAccount(p){
 
         const expSoon = isExpiringTomorrow(s.endDate);
 
+        const u = usersCache.find(u=>u.user_id===s.user_uid);
         const who = (isAdminLike(profile))
-          ? (usersCache.find(u=>u.user_id===s.user_uid)
-              ? ((usersCache.find(u=>u.user_id===s.user_uid).company_name||"")
-                  ? `${usersCache.find(u=>u.user_id===s.user_uid).company_name}(${usersCache.find(u=>u.user_id===s.user_uid).login_id})`
-                  : usersCache.find(u=>u.user_id===s.user_uid).login_id)
-              : "-")
+          ? (u ? ((u.company_name||"") ? `${u.company_name}(${u.login_id})` : u.login_id) : "-")
           : (profile.company_name ? `${profile.company_name}(${profile.login_id})` : profile.login_id);
 
         tr.innerHTML = `
-          <td><span class="muted">-</span></td>
+          <td>
+            ${isAdminLike(profile) ? `<input type="checkbox" class="chk" data-sel="${escapeHtml(s.id)}" ${selectedSlotIds.has(s.id) ? "checked" : ""} />` : `<span class="muted">-</span>`}
+          </td>
           <td>${escapeHtml(String(s.no||"-"))}</td>
           <td><div style="font-weight:1200">${escapeHtml(who)}</div></td>
           <td><span class="tag gold typeTag">${escapeHtml(typeDisplay(s.type))}</span></td>
@@ -1401,6 +1445,7 @@ function isMasterAccount(p){
         tb.appendChild(tr);
       }
 
+      // 입력 반영
       tb.querySelectorAll('input[data-f]').forEach(inp=>{
         inp.addEventListener("input", ()=>{
           const id = inp.getAttribute("data-id");
@@ -1414,31 +1459,89 @@ function isMasterAccount(p){
         });
       });
 
-      tb.querySelectorAll("button[data-act]").forEach(btn=>{
-        btn.addEventListener("click", ()=>{
-          const act = btn.getAttribute("data-act");
-          const id = btn.getAttribute("data-id");
-          if(act==="edit"){
-            editingSlotIds.add(id);
-            const s = slotsCache.find(x=>x.id===id);
-            if(s) ensureSlotDraft(s);
-            renderSlotsPage();
-            toast("수정 모드", "저장/취소 가능");
-            return;
-          }
-          if(act==="cancel"){
-            editingSlotIds.delete(id);
-            slotDrafts.delete(id);
-            renderSlotsPage();
-            return;
-          }
-          if(act==="save"){ saveSlotInline(id); return; }
-          if(act==="open"){ openSlot(id); return; }
-          if(act==="hide"){ hideSlot(id); return; }
-          if(act==="withdraw"){ withdrawSlot(id); return; }
-          if(act==="extend"){ extendSlotUI(id); return; }
+      // ✅ 체크박스 선택
+      tb.querySelectorAll('input[data-sel]').forEach(chk=>{
+        chk.addEventListener("change", ()=>{
+          const id = chk.getAttribute("data-sel");
+          if(!id) return;
+          if(chk.checked) selectedSlotIds.add(id);
+          else selectedSlotIds.delete(id);
+          updateSlotBulkBar();
+          syncSelectAllCheckbox();
         });
       });
+
+      // ✅ 전체 선택
+      const selAll = document.getElementById("slotSelectAll");
+      if(selAll){
+        if(!isAdminLike(profile)){
+          selAll.checked = false;
+          selAll.disabled = true;
+        } else {
+          selAll.disabled = false;
+          syncSelectAllCheckbox();
+          selAll.onchange = ()=>{
+            const visibleIds = [...tb.querySelectorAll('input[data-sel]')]
+              .map(x=>x.getAttribute("data-sel"))
+              .filter(Boolean);
+
+            if(selAll.checked){
+              visibleIds.forEach(id=>selectedSlotIds.add(id));
+            } else {
+              visibleIds.forEach(id=>selectedSlotIds.delete(id));
+            }
+            updateSlotBulkBar();
+            renderSlotsPage(); // 체크 UI 반영
+          };
+        }
+      }
+
+      // ✅ 버튼 핸들러: async + try/catch 로 먹통 방지
+      tb.querySelectorAll("button[data-act]").forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          try{
+            const act = btn.getAttribute("data-act");
+            const id = btn.getAttribute("data-id");
+
+            if(act==="edit"){
+              editingSlotIds.add(id);
+              const s = slotsCache.find(x=>x.id===id);
+              if(s) ensureSlotDraft(s);
+              renderSlotsPage();
+              toast("수정 모드", "저장/취소 가능");
+              return;
+            }
+            if(act==="cancel"){
+              editingSlotIds.delete(id);
+              slotDrafts.delete(id);
+              renderSlotsPage();
+              return;
+            }
+            if(act==="save"){ await saveSlotInline(id); return; }
+            if(act==="open"){ await openSlot(id); return; }
+            if(act==="hide"){ await hideSlot(id); return; }
+            if(act==="withdraw"){ await withdrawSlot(id); return; }
+            if(act==="extend"){ await extendSlotUI(id); return; }
+
+          } catch(e){
+            console.error(e);
+            toast("오류", e?.message ? e.message : String(e));
+          }
+        });
+      });
+
+      updateSlotBulkBar();
+    }
+
+    function syncSelectAllCheckbox(){
+      const selAll = document.getElementById("slotSelectAll");
+      const tb = document.getElementById("slotTbody");
+      if(!selAll || !tb) return;
+      const visibleIds = [...tb.querySelectorAll('input[data-sel]')]
+        .map(x=>x.getAttribute("data-sel"))
+        .filter(Boolean);
+      const allChecked = visibleIds.length > 0 && visibleIds.every(id => selectedSlotIds.has(id));
+      selAll.checked = allChecked;
     }
 
     async function saveSlotInline(id){
@@ -1583,6 +1686,95 @@ function isMasterAccount(p){
       await fetchSlots();
       renderSlotsPage();
       if(activePage==="dash") renderDash();
+    }
+
+    /***********************
+     * ✅ 일괄 연장/철회/완전삭제
+     ***********************/
+    async function bulkExtendSelected(){
+      if(!profile || !isAdminLike(profile)) return toast("권한 없음");
+      const ids = [...selectedSlotIds];
+      if(ids.length === 0) return toast("선택 없음");
+
+      const days = askExtendDays("7");
+      if(!days) return toast("연장 취소");
+
+      const targets = slotsCache.filter(s => ids.includes(s.id)).map(s=>({ ...s, expired: computeExpired(s) }));
+      const ok = confirm(`선택 ${targets.length}개 슬롯을 +${days}일 연장할까요?\n(오픈+정상만 연장 대상)`);
+      if(!ok) return;
+
+      for(const s of targets){
+        if(s.expired || s.withdrawPending) continue;
+        if(!(s.opened && s.saved)) continue;
+        if(!s.endDate) continue;
+
+        const newEnd = addDaysToDateStr(s.endDate, days);
+        const { error } = await sb.from("slots").update({ end_date: newEnd }).eq("id", s.id);
+        if(error){
+          console.error(error);
+          toast("일괄 연장 실패", error.message);
+          return;
+        }
+      }
+
+      toast("일괄 연장 완료");
+      logEvent(`일괄 연장: ${targets.length}개, +${days}일`);
+      await fetchSlots();
+      renderSlotsPage();
+      if(activePage==="dash") renderDash();
+    }
+
+    async function bulkWithdrawSelected(){
+      if(!profile || !isAdminLike(profile)) return toast("권한 없음");
+      const ids = [...selectedSlotIds];
+      if(ids.length === 0) return toast("선택 없음");
+
+      const ok = confirm(`선택 ${ids.length}개 슬롯을 철회(철회 대기) 처리할까요?\n(사용자 화면 숨김 + '슬롯 삭제' 메뉴로 이동)`);
+      if(!ok) return;
+
+      const { error } = await sb.from("slots").update({
+        withdraw_pending:true,
+        hidden_by_admin:true,
+        opened:false,
+        saved:false
+      }).in("id", ids);
+
+      if(error){
+        console.error(error);
+        toast("일괄 철회 실패", error.message);
+        return;
+      }
+
+      toast("일괄 철회 완료");
+      logEvent(`일괄 철회: ${ids.length}개`);
+      selectedSlotIds.clear();
+      await fetchSlots();
+      renderSlotsPage();
+      if(activePage==="dash") renderDash();
+    }
+
+    async function bulkDeleteSelected(){
+      if(!profile || !isAdminLike(profile)) return toast("권한 없음");
+      const ids = [...selectedSlotIds];
+      if(ids.length === 0) return toast("선택 없음");
+
+      const ok = confirm(`선택 ${ids.length}개 슬롯을 완전 삭제할까요?\n(복구 불가)`);
+      if(!ok) return;
+
+      const { error } = await sb.from("slots").delete().in("id", ids);
+      if(error){
+        console.error(error);
+        toast("일괄 삭제 실패", error.message);
+        return;
+      }
+
+      toast("일괄 완전삭제 완료");
+      logEvent(`일괄 완전삭제: ${ids.length}개`);
+      selectedSlotIds.clear();
+      await fetchSlots();
+      renderSlotsPage();
+      if(activePage==="dash") renderDash();
+      if(activePage==="cleanup") renderCleanup();
     }
 
     /***********************
@@ -1824,13 +2016,27 @@ function isMasterAccount(p){
 
     async function deleteUser(userId){
       if(!isAdminLike(profile)){ toast("권한 없음"); return; }
-      if(!isMasterAccount(profile)){
-        toast("권한 없음", "삭제는 마스터 계정만 가능합니다.");
+
+      // ✅ 자기 자신 삭제 방지
+      if(userId === authUser?.id){
+        toast("삭제 불가", "자기 자신 계정은 삭제할 수 없습니다.");
         return;
       }
 
       const u = usersCache.find(x=>x.user_id===userId);
       const who = u ? `${u.company_name||""}(${u.login_id})` : userId;
+
+      // ✅ 권한 체크 (마스터=전체 / 관리자=일반만)
+      if(!canDeleteUserByRole(u)){
+        toast("권한 없음", "관리자는 일반 계정(광고주/대행사/총판사)만 삭제할 수 있습니다.\nADMIN/MASTER 삭제는 마스터만 가능합니다.");
+        return;
+      }
+
+      // ✅ 마스터 계정 보호
+      if(u && u.login_id === MASTER_ID){
+        toast("삭제 불가", "마스터 계정은 삭제할 수 없습니다.");
+        return;
+      }
 
       const ok = confirm(
         `정말 삭제할까요?\n\n${who}\n\n※ profiles + Auth 계정이 함께 삭제됩니다. (복구 불가)`
@@ -1898,6 +2104,11 @@ function isMasterAccount(p){
         const tr = document.createElement("tr");
         const isEditing = editingUserIds.has(u.user_id);
 
+        const delDisabled =
+          (u.user_id === authUser?.id) ||
+          (u.login_id === MASTER_ID) ||
+          (!canDeleteUserByRole(u));
+
         if(!isEditing){
           tr.innerHTML = `
             <td style="font-weight:1200">${escapeHtml(u.login_id)}</td>
@@ -1907,7 +2118,11 @@ function isMasterAccount(p){
             <td>
               <button class="btn mini btnGreen" data-uact="edit" data-uid="${escapeHtml(u.user_id)}">수정</button>
             </td>
-            <td><button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}">삭제</button></td>
+            <td>
+              <button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}" ${delDisabled ? "disabled" : ""}>
+                삭제
+              </button>
+            </td>
           `;
         } else {
           const d = ensureUserDraft(u);
@@ -1934,7 +2149,11 @@ function isMasterAccount(p){
                 <button class="btn mini" data-uact="cancel" data-uid="${escapeHtml(u.user_id)}">취소</button>
               </div>
             </td>
-            <td><button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}">삭제</button></td>
+            <td>
+              <button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}" ${delDisabled ? "disabled" : ""}>
+                삭제
+              </button>
+            </td>
           `;
         }
         tb.appendChild(tr);
@@ -2128,6 +2347,7 @@ function isMasterAccount(p){
           usersCache = [];
           slotsCache = [];
           activePage = "dash";
+          selectedSlotIds.clear();
           mount();
           return;
         }
