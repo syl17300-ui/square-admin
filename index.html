@@ -1602,17 +1602,23 @@ async function saveSlotInline(id){
   };
 
   // ✅ select()를 붙이면 업데이트가 실제로 됐는지/권한 문제인지 더 확실히 잡힘
-  const { data, error } = await sb
-    .from("slots")
-    .update(payload)
-    .eq("id", id)
-    .select();
+const { data, error } = await sb
+  .from("slots")
+  .update(payload)
+  .eq("id", id)
+  .select("id")
+  .maybeSingle();
 
-  if(error){
-    console.error(error);
-    toast("저장 실패", error.message);
-    return;
-  }
+if (error) {
+  console.error(error);
+  toast("저장 실패", error.message);
+  return;
+}
+
+if (!data) {
+  toast("저장 실패", "RLS 정책 때문에 업데이트가 0건 처리됐습니다.");
+  return;
+}
 
   if(!data || !data.length){
     // RLS 때문에 update가 0행 처리되는 경우를 확실히 사용자에게 보여줌
