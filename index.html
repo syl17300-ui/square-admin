@@ -11,15 +11,15 @@
     :root{
       --bg:          #050810;
       --bg2:         #080c17;
-      --panel:       #0c1122;
-      --panel2:      #111829;
-      --panel3:      #161e33;
-      --border:      rgba(48,62,110,.70);
-      --border2:     rgba(48,62,110,.40);
+      --panel:       #0f1528;
+      --panel2:      #151c35;
+      --panel3:      #1a2340;
+      --border:      rgba(58,72,130,.70);
+      --border2:     rgba(58,72,130,.40);
       --text:        #e8eeff;
-      --text2:       #c4cce8;
-      --muted:       #7a85ab;
-      --muted2:      #4e5878;
+      --text2:       #d0d8f0;
+      --muted:       #8a95bd;
+      --muted2:      #5e6890;
 
       --neon:        #3b9eff;
       --neon-glow:   rgba(59,158,255,.18);
@@ -59,7 +59,7 @@
       margin: 0;
       min-height: 100vh;
       font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.5;
       letter-spacing: -.15px;
       color: var(--text);
@@ -125,26 +125,36 @@
 
     .logoMark {
       width: 38px; height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(145deg, #4aaeff 0%, #2280e8 50%, #1660c0 100%);
-      box-shadow: 0 0 0 1px rgba(74,174,255,.25), 0 4px 16px rgba(59,158,255,.30);
+      border-radius: 9px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
       position: relative;
       flex-shrink: 0;
       overflow: hidden;
+      box-shadow: 
+        0 0 0 2px rgba(59,130,246,.20),
+        0 4px 12px rgba(30,58,138,.35),
+        inset 0 1px 1px rgba(255,255,255,.15);
     }
+    
+    /* 정사각형 모양 3개 (스퀘어 컨셉) */
     .logoMark::before {
       content: "";
-      position: absolute; inset: 0;
-      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.40) 0%, transparent 55%);
+      position: absolute;
+      width: 8px; height: 8px;
+      background: rgba(255,255,255,.90);
+      border-radius: 2px;
+      top: 7px; left: 7px;
+      box-shadow: 
+        14px 0 0 rgba(255,255,255,.90),
+        0 14px 0 rgba(255,255,255,.90),
+        14px 14px 0 rgba(96,165,250,.85);
     }
+    
     .logoMark::after {
-      content: "S";
-      position: absolute; inset: 0;
-      display: grid; place-items: center;
-      color: #fff;
-      font-size: 17px; font-weight: 800;
-      text-shadow: 0 1px 3px rgba(0,0,0,.30);
-      letter-spacing: .5px;
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(59,130,246,.15) 100%);
     }
 
     .brandTitle { display: flex; flex-direction: column; gap: 1px; }
@@ -219,11 +229,11 @@
       border: 1px solid var(--border);
       background: var(--panel2);
       color: var(--text2);
-      padding: 7px 11px;
+      padding: 10px 16px;
       border-radius: var(--radius3);
       cursor: pointer;
       font-weight: 600;
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1;
       white-space: nowrap;
       font-family: inherit;
@@ -260,7 +270,7 @@
     }
     .btnGreen:hover { background: rgba(45,204,133,.16); color: #c4ffe8; }
 
-    .mini { padding: 5px 9px; border-radius: 6px; font-size: 11px; }
+    .mini { padding: 8px 14px; border-radius: 7px; font-size: 13px; }
 
     /* ────────────────────────────────────────
        LAYOUT
@@ -325,14 +335,14 @@
 
     .input, select, textarea {
       width: 100%;
-      padding: 8px 11px;
+      padding: 11px 14px;
       border-radius: var(--radius3);
       border: 1px solid var(--border);
       background: rgba(5,8,18,.70);
       color: var(--text);
       outline: none;
       font-weight: 500;
-      font-size: 13px;
+      font-size: 14px;
       font-family: inherit;
       letter-spacing: -.1px;
     }
@@ -363,15 +373,15 @@
       margin-top: 16px;
     }
 
-    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 15px; }
 
     thead th {
       text-align: left;
-      font-size: 11px; font-weight: 700;
-      letter-spacing: .5px;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: .6px;
       text-transform: uppercase;
       color: var(--muted);
-      padding: 9px 11px;
+      padding: 13px 15px;
       border-bottom: 1px solid var(--border2);
       background: rgba(6,10,24,.85);
       position: sticky; top: 0; z-index: 2;
@@ -379,13 +389,13 @@
     }
 
     tbody td {
-      padding: 10px 11px;
+      padding: 14px 15px;
       border-bottom: 1px solid rgba(48,62,110,.25);
       vertical-align: middle;
       white-space: nowrap;
       font-weight: 500;
       color: var(--text2);
-      font-size: 13px;
+      font-size: 15px;
     }
 
     tbody tr:last-child td { border-bottom: none; }
@@ -396,14 +406,14 @@
     ──────────────────────────────────────── */
     .tag {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 9px;
+      padding: 5px 11px;
       border-radius: 99px;
       border: 1px solid var(--border2);
       background: rgba(6,10,24,.70);
       color: var(--text2);
       font-weight: 600;
       white-space: nowrap;
-      font-size: 11px;
+      font-size: 13px;
       line-height: 1;
       letter-spacing: -.1px;
     }
@@ -1047,15 +1057,8 @@
       </div>
       <div class="modal-body">
         <div class="modal-field">
-          <div class="modal-label">연장할 일수</div>
-          <select id="extendDaysInput" class="modal-select">
-            <option value="1">1일</option>
-            <option value="3">3일</option>
-            <option value="7" selected>7일</option>
-            <option value="10">10일</option>
-            <option value="14">14일</option>
-            <option value="30">30일</option>
-          </select>
+          <div class="modal-label">연장할 일수 (숫자만 입력)</div>
+          <input type="number" id="extendDaysInput" class="modal-input" min="1" value="7" placeholder="예: 7" />
         </div>
       </div>
       <div class="modal-footer">
@@ -1185,6 +1188,9 @@
     let extendTargetId = null;
     let extendTargetIds = [];
 
+    // ✅ 조합키워드 전역 메모리 저장소 (슬롯ID별로 저장)
+    const keywordMemory = new Map();
+
     const TYPE_DISPLAY_MAP = {
       "리워드(단일)": "스퀘어(단일)","리워드(원부)": "스퀘어(원부)",
       "리워드1": "스퀘어(단일)","리워드2": "스퀘어(원부)"
@@ -1197,15 +1203,30 @@
 
     // ✅ 조합키워드 옵션
     const KEYWORD_OPTIONS = [
-      { value: "", label: "선택" },
-      { value: "Attribute", label: "Attribute value[속성값]" },
-      { value: "Tag", label: "Tag value[태그값]" },
+      { value: "Not applied", label: "Not applied[미적용]" },
+      { value: "Attribute value", label: "Attribute value[속성값]" },
+      { value: "Tag value", label: "Tag value[태그값]" },
       { value: "Suffix", label: "Suffix[접미사]" },
       { value: "Prefix", label: "Prefix[접두사]" },
       { value: "Review", label: "Review[리뷰키워드]" },
       { value: "Option", label: "Option[옵션키워드]" },
-      { value: "QnA", label: "Q&A keyword[Q&A키워드]" }
+      { value: "Q&A keyword", label: "Q&A keyword[Q&A키워드]" }
     ];
+
+    // ✅ 조합키워드별 색깔 매핑
+    function getKeywordColor(value){
+      const colorMap = {
+        "Not applied": "gray",
+        "Attribute value": "blue",
+        "Tag value": "green",
+        "Suffix": "purple",
+        "Prefix": "orange",
+        "Review": "gold",
+        "Option": "red",
+        "Q&A keyword": "gray"
+      };
+      return colorMap[value] || "gray";
+    }
 
     let authUser = null;
     let profile = null;
@@ -1258,6 +1279,9 @@
     }
 
     function normalizeSlotFromDb(r){
+      // ✅ 전역 메모리에서 조합키워드 불러오기 (있으면 복원, 없으면 기본값)
+      const savedKeywords = keywordMemory.get(r.id) || { kw2: "Not applied", kw3: "Not applied" };
+      
       return {
         id: r.id, no: r.no,
         userId: r.login_id || r.user_login_id || r.userId || r.user_id_login || r.user_login || r.userIdLogin || r.user_loginid || r.user_login_id || r.user_id,
@@ -1266,8 +1290,8 @@
         opened: !!r.opened, saved: !!r.saved, hiddenByAdmin: !!r.hidden_by_admin,
         withdrawPending: !!r.withdraw_pending,
         keyword: r.keyword || "",
-        keyword2: "", // 메모리에만 저장 (DB에서 안 가져옴)
-        keyword3: "", // 메모리에만 저장 (DB에서 안 가져옴)
+        keyword2: savedKeywords.kw2,
+        keyword3: savedKeywords.kw3,
         link: r.link || "", catalogLink: r.catalog_link || "",
         memo: r.memo || "", storeId: r.store_id || "", expired: false, createdAt: r.created_at
       };
@@ -1280,27 +1304,28 @@
     }
 
     function slotStateTag(s){
-      if(s.expired)         return `<span class="tag red">만료</span>`;
-      if(s.withdrawPending) return `<span class="tag gray">철회 대기</span>`;
-      if(s.hiddenByAdmin)   return `<span class="tag gray">숨김</span>`;
-      if(s.saved)           return `<span class="tag green">정상</span>`;
-      if(s.opened)          return `<span class="tag gold">오픈됨</span>`;
-      return `<span class="tag gray">부여됨</span>`;
+      const style = 'style="font-size:14px"';
+      if(s.expired)         return `<span class="tag red" ${style}>만료</span>`;
+      if(s.withdrawPending) return `<span class="tag gray" ${style}>철회 대기</span>`;
+      if(s.hiddenByAdmin)   return `<span class="tag gray" ${style}>숨김</span>`;
+      if(s.saved)           return `<span class="tag green" ${style}>정상</span>`;
+      if(s.opened)          return `<span class="tag gold" ${style}>오픈됨</span>`;
+      return `<span class="tag gray" ${style}>부여됨</span>`;
     }
 
     function storeIdTagHtml(s){
       const v = (s.storeId || "").trim();
       if(!v) return `<span class="muted">-</span>`;
       const cls = s.saved ? "green" : "gray";
-      return `<span class="tag ${cls}" title="${escapeHtml(v)}">${escapeHtml(v)}</span>`;
+      return `<span class="tag ${cls}" style="font-size:14px" title="${escapeHtml(v)}">${escapeHtml(v)}</span>`;
     }
 
     function ensureSlotDraft(slot){
       if(!slotDrafts.has(slot.id)){
         slotDrafts.set(slot.id, {
           kw: slot.keyword || "",
-          kw2: slot.keyword2 || "",
-          kw3: slot.keyword3 || "",
+          kw2: slot.keyword2 || "Not applied",
+          kw3: slot.keyword3 || "Not applied",
           link: slot.link || "",
           catalogLink: slot.catalogLink || "",
           memo: slot.memo || ""
@@ -1315,7 +1340,7 @@
         const url = s.link || "";
         if(!url) return `<span class="muted">-</span>`;
         const displayUrl = url.length > 35 ? url.substring(0, 35) + "..." : url;
-        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="colLink" style="color:var(--neon-text);text-decoration:underline" title="${escapeHtml(url)}">${escapeHtml(displayUrl)}</a>`;
+        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="colLink" style="color:var(--neon-text);text-decoration:none" title="${escapeHtml(url)}">${escapeHtml(displayUrl)}</a>`;
       }
       const a = s.link || "";
       const b = s.catalogLink || "";
@@ -1323,8 +1348,8 @@
       const displayB = b.length > 30 ? b.substring(0, 30) + "..." : b;
       return `
         <div class="linkCell">
-          <div><span class="k">상품</span>${a ? `<a href="${escapeHtml(a)}" target="_blank" rel="noopener noreferrer" class="v" style="color:var(--neon-text);text-decoration:underline" title="${escapeHtml(a)}">${escapeHtml(displayA)}</a>` : `<span class="muted">-</span>`}</div>
-          <div style="margin-top:5px"><span class="k">카탈로그</span>${b ? `<a href="${escapeHtml(b)}" target="_blank" rel="noopener noreferrer" class="v" style="color:var(--neon-text);text-decoration:underline" title="${escapeHtml(b)}">${escapeHtml(displayB)}</a>` : `<span class="muted">-</span>`}</div>
+          <div><span class="k">상품</span>${a ? `<a href="${escapeHtml(a)}" target="_blank" rel="noopener noreferrer" class="v" style="color:var(--neon-text);text-decoration:none" title="${escapeHtml(a)}">${escapeHtml(displayA)}</a>` : `<span class="muted">-</span>`}</div>
+          <div style="margin-top:5px"><span class="k">카탈로그</span>${b ? `<a href="${escapeHtml(b)}" target="_blank" rel="noopener noreferrer" class="v" style="color:var(--neon-text);text-decoration:none" title="${escapeHtml(b)}">${escapeHtml(displayB)}</a>` : `<span class="muted">-</span>`}</div>
         </div>
       `;
     }
@@ -1569,12 +1594,15 @@
         } else {
           kwCell   = `${escapeHtml(s.keyword||"")}`;
           
-          // ✅ 조합키워드 메모리에서 읽어서 표시
-          const kw2Label = KEYWORD_OPTIONS.find(o=>o.value===s.keyword2)?.label || "";
-          const kw3Label = KEYWORD_OPTIONS.find(o=>o.value===s.keyword3)?.label || "";
+          // ✅ 조합키워드 표시 (값별 색깔 + / 접두사)
+          const kw2Display = s.keyword2 ? `/${s.keyword2}` : "";
+          const kw3Display = s.keyword3 ? `/${s.keyword3}` : "";
           
-          kw2Cell  = kw2Label ? `<span class="tag gray" style="font-size:11px;padding:3px 8px">${escapeHtml(kw2Label)}</span>` : `<span class="muted">-</span>`;
-          kw3Cell  = kw3Label ? `<span class="tag gray" style="font-size:11px;padding:3px 8px">${escapeHtml(kw3Label)}</span>` : `<span class="muted">-</span>`;
+          const kw2Color = getKeywordColor(s.keyword2);
+          const kw3Color = getKeywordColor(s.keyword3);
+          
+          kw2Cell = kw2Display ? `<span class="tag ${kw2Color}" style="font-size:13px;padding:5px 10px;font-family:'DM Mono',monospace">${escapeHtml(kw2Display)}</span>` : `<span class="muted">-</span>`;
+          kw3Cell = kw3Display ? `<span class="tag ${kw3Color}" style="font-size:13px;padding:5px 10px;font-family:'DM Mono',monospace">${escapeHtml(kw3Display)}</span>` : `<span class="muted">-</span>`;
           
           linkCell = renderLinkCellReadOnly(s);
           memoCell = `${escapeHtml(s.memo||"")}`;
@@ -1597,15 +1625,15 @@
 
         tr.innerHTML = `
           <td>${checkCell}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${escapeHtml(String(s.no||"-"))}</td>
-          <td><div style="font-weight:700;font-size:12px">${escapeHtml(who)}</div></td>
-          <td><span class="tag gold typeTag">${escapeHtml(typeDisplay(s.type))}</span></td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)">${escapeHtml(String(s.no||"-"))}</td>
+          <td><div style="font-weight:700;font-size:15px">${escapeHtml(who)}</div></td>
+          <td><span class="tag gold typeTag" style="font-size:14px">${escapeHtml(typeDisplay(s.type))}</span></td>
           <td>${storeIdTagHtml(s)}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:11px">${escapeHtml(s.startDate||"-")}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:11px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px">${escapeHtml(s.startDate||"-")}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
           <td>${slotStateTag(s)}</td>
           <td>${editCell}</td>
-          <td>${kwCell}</td>
+          <td style="font-size:15px">${kwCell}</td>
           <td>${kw2Cell}</td>
           <td>${kw3Cell}</td>
           <td>${linkCell}</td>
@@ -1662,29 +1690,32 @@
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
       if(computeExpired(s)){ toast("만료된 슬롯"); return; }
       if(s.withdrawPending){ toast("철회 대기 슬롯"); return; }
-      const d = slotDrafts.get(id) || { kw: s.keyword||"", kw2: "", kw3: "", link: s.link||"", catalogLink: s.catalogLink||"", memo: s.memo||"" };
+      const d = slotDrafts.get(id) || { kw: s.keyword||"", kw2: "Not applied", kw3: "Not applied", link: s.link||"", catalogLink: s.catalogLink||"", memo: s.memo||"" };
       const kw = (d.kw || "").trim();
-      const kw2 = (d.kw2 || "").trim();
-      const kw3 = (d.kw3 || "").trim();
+      const kw2 = (d.kw2 || "Not applied").trim();
+      const kw3 = (d.kw3 || "Not applied").trim();
       const link = (d.link || "").trim();
       const catalogLink = (d.catalogLink || "").trim(), memo = (d.memo || "").trim();
       const wonbu = isTypeWonbu(s.type);
       if(!kw || !link){ toast("저장 실패","메인키워드/상품링크는 필수입니다."); return; }
       if(wonbu && !catalogLink){ toast("저장 실패","원부 타입은 카탈로그 링크도 필수입니다."); return; }
       const storeId = extractStoreId(link);
-      // ✅ 조합키워드는 DB에 저장 안 하고 메모리에만 저장
+      
+      // ✅ DB 저장 (조합키워드는 제외)
       const payload = { keyword: kw, link, catalog_link: wonbu ? catalogLink : "", memo, store_id: storeId, opened: true, saved: true, hidden_by_admin: false, withdraw_pending: false };
       const { error } = await sb.from("slots").update(payload).eq("id", id);
       if(error){ console.error(error); toast("저장 실패", error.message); return; }
       
-      // ✅ 메모리 캐시에 조합키워드 저장
-      s.keyword2 = kw2;
-      s.keyword3 = kw3;
+      // ✅ 전역 메모리에 조합키워드 저장 (영구 보존)
+      keywordMemory.set(id, { kw2, kw3 });
       
-      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, storeId=${storeId||"-"}`);
+      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}, storeId=${storeId||"-"}`);
       toast("저장 완료", storeId ? `스토어ID: ${storeId}` : "스토어ID 추출 실패(링크 확인)");
-      editingSlotIds.delete(id); slotDrafts.delete(id);
-      await fetchSlots(); renderSlotsPage();
+      editingSlotIds.delete(id); 
+      slotDrafts.delete(id);
+      
+      await fetchSlots();
+      renderSlotsPage();
       if(activePage==="dash") renderDash();
     }
 
