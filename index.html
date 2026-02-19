@@ -1276,6 +1276,14 @@
       const { data, error } = await sb.from("slots").select("*").order("no", { ascending: true });
       if(error){ console.error(error); toast("슬롯 조회 실패", error.message); slotsCache = []; return; }
       slotsCache = (data || []).map(normalizeSlotFromDb);
+      
+      // ✅ 만료된 슬롯 자동 철회
+      if(isAdminLike(profile)){
+        await autoWithdrawExpiredSlots();
+        // 자동 철회 후 다시 로드
+        const { data: updated } = await sb.from("slots").select("*").order("no", { ascending: true });
+        if(updated) slotsCache = updated.map(normalizeSlotFromDb);
+      }
     }
 
     function normalizeSlotFromDb(r){
@@ -1301,6 +1309,28 @@
       const now = new Date();
       if(s.endDate){ const end = new Date(s.endDate + "T23:59:59"); return end < now; }
       return false;
+    }
+
+    // ✅ 만료된 슬롯 자동 철회 처리
+    async function autoWithdrawExpiredSlots(){
+      const expired = slotsCache.filter(s => {
+        if(!s.endDate || s.withdrawPending) return false;
+        const now = new Date();
+        const end = new Date(s.endDate + "T23:59:59");
+        return end < now; // 만료일 23:59:59 지나면
+      });
+
+      if(expired.length > 0){
+        for(const s of expired){
+          await sb.from("slots").update({
+            withdraw_pending: true,
+            hidden_by_admin: true,
+            opened: false,
+            saved: false
+          }).eq("id", s.id);
+        }
+        logEvent(`자동 철회: ${expired.length}개 만료 슬롯`);
+      }
     }
 
     function slotStateTag(s){
@@ -1544,6 +1574,9 @@
       const tb = document.getElementById("slotTbody");
       tb.innerHTML = "";
 
+      // ✅ 표시 순서대로 번호 부여
+      let displayNumber = 1;
+
       for(const s of rows){
         const tr = document.createElement("tr");
         const canEdit = (!s.expired) && (!s.withdrawPending) &&
@@ -1625,7 +1658,7 @@
 
         tr.innerHTML = `
           <td>${checkCell}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)">${escapeHtml(String(s.no||"-"))}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)">${displayNumber}</td>
           <td><div style="font-weight:700;font-size:15px">${escapeHtml(who)}</div></td>
           <td><span class="tag gold typeTag" style="font-size:14px">${escapeHtml(typeDisplay(s.type))}</span></td>
           <td>${storeIdTagHtml(s)}</td>
@@ -1641,6 +1674,7 @@
           <td>${manage}</td>
         `;
         tb.appendChild(tr);
+        displayNumber++; // ✅ 표시 번호 증가
       }
 
       // ✅ 체크박스 이벤트
