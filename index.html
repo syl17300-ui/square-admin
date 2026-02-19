@@ -1087,6 +1087,23 @@
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ✅ Supabase 세션 자동 갱신 및 상태 관리
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        console.log('세션 만료 - 로그아웃');
+        authUser = null;
+        profile = null;
+        activePage = "dash";
+        mount();
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('✅ 세션 자동 갱신됨');
+        if(session) authUser = session.user;
+      } else if (event === 'SIGNED_IN' && session) {
+        console.log('✅ 로그인됨');
+        authUser = session.user;
+      }
+    });
+
     /***********************
      * 1) 유틸
      ***********************/
@@ -1096,6 +1113,21 @@
       return (s ?? "").toString()
         .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    // ✅ 세션 유효성 체크
+    async function checkSession(){
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session){
+        toast("세션 만료", "다시 로그인해주세요.");
+        await sb.auth.signOut();
+        authUser = null;
+        profile = null;
+        activePage = "dash";
+        mount();
+        return false;
+      }
+      return true;
     }
 
     function toast(title, sub){
@@ -1752,6 +1784,8 @@
     }
 
     async function saveSlotInline(id){
+      if(!(await checkSession())) return;
+      
       const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
       if(computeExpired(s)){ toast("만료된 슬롯"); return; }
@@ -1786,6 +1820,8 @@
     }
 
     async function openSlot(id){
+      if(!(await checkSession())) return;
+      
       const { error } = await sb.from("slots").update({ hidden_by_admin:false, withdraw_pending:false, opened:true }).eq("id", id);
       if(error){ toast("오픈 실패", error.message); return; }
       logEvent(`슬롯 오픈: slot=${id}`); toast("오픈 완료","사용자 화면에 노출됩니다.");
@@ -1793,6 +1829,8 @@
     }
 
     async function hideSlot(id){
+      if(!(await checkSession())) return;
+      
       const { error } = await sb.from("slots").update({ hidden_by_admin:true, opened:false }).eq("id", id);
       if(error){ toast("숨김 실패", error.message); return; }
       logEvent(`슬롯 숨김: slot=${id}`); toast("숨김 처리","관리자에게만 보이게 숨김");
