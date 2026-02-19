@@ -1115,16 +1115,12 @@
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
 
-    // ✅ 세션 유효성 체크
+    // ✅ 세션 유효성 체크 (경고만, 강제 로그아웃 안 함)
     async function checkSession(){
       const { data: { session } } = await sb.auth.getSession();
       if(!session){
-        toast("세션 만료", "다시 로그인해주세요.");
-        await sb.auth.signOut();
-        authUser = null;
-        profile = null;
-        activePage = "dash";
-        mount();
+        console.warn('세션이 만료되었을 수 있습니다.');
+        toast("세션 확인", "문제가 지속되면 다시 로그인해주세요.");
         return false;
       }
       return true;
@@ -1784,8 +1780,6 @@
     }
 
     async function saveSlotInline(id){
-      if(!(await checkSession())) return;
-      
       const s = slotsCache.find(x=>x.id===id);
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
       if(computeExpired(s)){ toast("만료된 슬롯"); return; }
@@ -1820,8 +1814,6 @@
     }
 
     async function openSlot(id){
-      if(!(await checkSession())) return;
-      
       const { error } = await sb.from("slots").update({ hidden_by_admin:false, withdraw_pending:false, opened:true }).eq("id", id);
       if(error){ toast("오픈 실패", error.message); return; }
       logEvent(`슬롯 오픈: slot=${id}`); toast("오픈 완료","사용자 화면에 노출됩니다.");
@@ -1829,8 +1821,6 @@
     }
 
     async function hideSlot(id){
-      if(!(await checkSession())) return;
-      
       const { error } = await sb.from("slots").update({ hidden_by_admin:true, opened:false }).eq("id", id);
       if(error){ toast("숨김 실패", error.message); return; }
       logEvent(`슬롯 숨김: slot=${id}`); toast("숨김 처리","관리자에게만 보이게 숨김");
