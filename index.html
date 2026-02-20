@@ -855,7 +855,7 @@
                   <th style="width:120px">조합키워드1</th>
                   <th style="width:120px">조합키워드2</th>
                   <th style="width:200px">링크</th>
-                  <th style="width:130px">메모</th>
+                  <th style="width:130px" id="slotMemoHeader">메모</th>
                   <th style="width:240px">관리</th>
                 </tr>
               </thead>
@@ -1339,10 +1339,13 @@
         opened: !!r.opened, saved: !!r.saved, hiddenByAdmin: !!r.hidden_by_admin,
         withdrawPending: !!r.withdraw_pending,
         keyword: r.keyword || "",
-        keyword2: r.keyword2 || "Not applied",  // ✅ DB에서 불러오기
-        keyword3: r.keyword3 || "Not applied",  // ✅ DB에서 불러오기
+        keyword2: r.keyword2 || "Not applied",
+        keyword3: r.keyword3 || "Not applied",
         link: r.link || "", catalogLink: r.catalog_link || "",
-        memo: r.memo || "", storeId: r.store_id || "", expired: false, createdAt: r.created_at
+        memo: r.memo || "", 
+        createdBy: r.created_by || "",  // ✅ 생성자 ID
+        createdByName: r.created_by_name || "",  // ✅ 생성자 이름
+        expired: false, createdAt: r.created_at
       };
     }
 
@@ -1526,6 +1529,12 @@
     }
 
     function renderSlotsPage(){
+      // ✅ 마스터 계정이면 헤더를 "생성자"로 변경
+      const memoHeader = document.getElementById("slotMemoHeader");
+      if(memoHeader){
+        memoHeader.textContent = isMasterAccount(profile) ? "생성자" : "메모";
+      }
+      
       // ✅ sessionStorage에서 slotDrafts 복원
       try {
         const saved = sessionStorage.getItem('slotDrafts');
@@ -1687,7 +1696,14 @@
           kw3Cell = kw3Display ? `<span class="tag ${kw3Color}" style="font-size:13px;padding:5px 10px;font-family:'DM Mono',monospace">${escapeHtml(kw3Display)}</span>` : `<span class="muted">-</span>`;
           
           linkCell = renderLinkCellReadOnly(s);
-          memoCell = `${escapeHtml(s.memo||"")}`;
+          
+          // ✅ 마스터 계정이면 생성자 표시, 아니면 메모 표시
+          if(isMasterAccount(profile)){
+            const creatorDisplay = s.createdByName || s.createdBy || "-";
+            memoCell = `<span style="font-size:12px;color:var(--text2)">${escapeHtml(creatorDisplay)}</span>`;
+          } else {
+            memoCell = `${escapeHtml(s.memo||"")}`;
+          }
         }
 
         const expSoon = isExpiringTomorrow(s.endDate);
@@ -2128,9 +2144,25 @@
       const maxNo = (slotsCache || []).reduce((m,s)=>Math.max(m, s.no||0), 0);
       const newRows = [];
       for(let i=0;i<qty;i++){
-        newRows.push({ id: crypto.randomUUID(), no: maxNo+i+1, user_id: uid, type, start_date: start, end_date: end,
-          opened: false, saved: false, hidden_by_admin: false, withdraw_pending: false,
-          keyword:"", link:"", catalog_link:"", memo:"", store_id:"", created_at: nowISO() });
+        newRows.push({ 
+          id: crypto.randomUUID(), 
+          no: maxNo+i+1, 
+          user_id: uid, 
+          type, 
+          start_date: start, 
+          end_date: end,
+          opened: false, 
+          saved: false, 
+          hidden_by_admin: false, 
+          withdraw_pending: false,
+          keyword:"", 
+          link:"", 
+          catalog_link:"", 
+          memo:"", 
+          created_by: profile.login_id,  // ✅ 생성자 ID
+          created_by_name: profile.company_name || profile.login_id,  // ✅ 생성자 이름
+          created_at: nowISO() 
+        });
       }
       const { error } = await sb.from("slots").insert(newRows);
       if(error){ console.error(error); toast("슬롯부여 실패", error.message); return; }
@@ -2165,6 +2197,15 @@
         const data = await res.json().catch(()=> ({}));
         if(!res.ok){ console.error("function error:", data); toast("계정 생성 실패", data.error || `status ${res.status}`); return; }
         if(data?.error){ console.error("function returned error:", data); toast("계정 생성 실패", data.error); return; }
+        
+        // ✅ profiles에 생성자 정보 업데이트
+        if(data?.userId){
+          await sb.from("profiles").update({
+            created_by: profile.login_id,
+            created_by_name: profile.company_name || profile.login_id
+          }).eq("user_id", data.userId);
+        }
+        
         logEvent(`계정 생성: ${login_id} (${role}) 업체명=${company_name}`);
         toast("계정 생성 완료",`${company_name}(${login_id}) / ${ROLE_LABEL[role] || role}`);
         document.getElementById("u_id").value = ""; document.getElementById("u_pw").value = ""; document.getElementById("u_company").value = "";
