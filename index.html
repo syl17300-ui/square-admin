@@ -1332,9 +1332,6 @@
     }
 
     function normalizeSlotFromDb(r){
-      // ✅ 전역 메모리에서 조합키워드 불러오기 (있으면 복원, 없으면 기본값)
-      const savedKeywords = keywordMemory.get(r.id) || { kw2: "Not applied", kw3: "Not applied" };
-      
       return {
         id: r.id, no: r.no,
         userId: r.login_id || r.user_login_id || r.userId || r.user_id_login || r.user_login || r.userIdLogin || r.user_loginid || r.user_login_id || r.user_id,
@@ -1343,8 +1340,8 @@
         opened: !!r.opened, saved: !!r.saved, hiddenByAdmin: !!r.hidden_by_admin,
         withdrawPending: !!r.withdraw_pending,
         keyword: r.keyword || "",
-        keyword2: savedKeywords.kw2,
-        keyword3: savedKeywords.kw3,
+        keyword2: r.keyword2 || "Not applied",  // ✅ DB에서 불러오기
+        keyword3: r.keyword3 || "Not applied",  // ✅ DB에서 불러오기
         link: r.link || "", catalogLink: r.catalog_link || "",
         memo: r.memo || "", storeId: r.store_id || "", expired: false, createdAt: r.created_at
       };
@@ -1794,16 +1791,6 @@
     async function saveSlotInline(id){
       console.log('🔵 saveSlotInline 시작, ID:', id);
       
-      // ✅ 세션 확인
-      console.log('🔵 세션 확인 중...');
-      const { data: { session } } = await sb.auth.getSession();
-      console.log('🔵 세션 상태:', session ? '✅ 유효' : '❌ 만료');
-      if(!session){
-        toast("세션 만료", "페이지를 새로고침해주세요 (F5)");
-        console.error('❌ 세션이 만료되었습니다. 새로고침 필요!');
-        return;
-      }
-      
       const s = slotsCache.find(x=>x.id===id);
       console.log('🔵 슬롯 찾기:', s ? '성공' : '실패');
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
@@ -1831,34 +1818,38 @@
       const storeId = extractStoreId(link);
       console.log('🔵 스토어ID 추출:', storeId);
       
-      // ✅ DB 저장 (조합키워드는 제외)
-      const payload = { keyword: kw, link, catalog_link: wonbu ? catalogLink : "", memo, store_id: storeId, opened: true, saved: true, hidden_by_admin: false, withdraw_pending: false };
+      // ✅ DB 저장 (조합키워드 포함!)
+      const payload = { 
+        keyword: kw, 
+        keyword2: kw2,  // ✅ DB에 저장
+        keyword3: kw3,  // ✅ DB에 저장
+        link, 
+        catalog_link: wonbu ? catalogLink : "", 
+        memo, 
+        store_id: storeId, 
+        opened: true, 
+        saved: true, 
+        hidden_by_admin: false, 
+        withdraw_pending: false 
+      };
       console.log('🔵 DB 저장 시작, payload:', payload);
       
-      let result;
+      let error;
       try {
-        result = await Promise.race([
-          sb.from("slots").update(payload).eq("id", id),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('DB 저장 타임아웃 (10초)')), 10000))
-        ]);
+        const result = await sb.from("slots").update(payload).eq("id", id);
+        error = result.error;
       } catch(err) {
         console.error('❌ DB 저장 중 예외:', err);
         toast("저장 실패", err.message);
         return;
       }
       
-      const { error } = result;
       console.log('🔵 DB 저장 결과 - error:', error);
       if(error){ 
         console.error('❌ Supabase 에러:', error); 
         toast("저장 실패", error.message); 
         return; 
       }
-      
-      console.log('🔵 조합키워드 저장 시작');
-      // ✅ 전역 메모리에 조합키워드 저장 (영구 보존)
-      keywordMemory.set(id, { kw2, kw3 });
-      saveKeywordMemory(); // localStorage에 저장
       
       console.log('🔵 로그 이벤트');
       logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}, storeId=${storeId||"-"}`);
