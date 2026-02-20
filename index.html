@@ -1824,9 +1824,25 @@
       const payload = { keyword: kw, link, catalog_link: wonbu ? catalogLink : "", memo, store_id: storeId, opened: true, saved: true, hidden_by_admin: false, withdraw_pending: false };
       console.log('🔵 DB 저장 시작, payload:', payload);
       
-      const { error } = await sb.from("slots").update(payload).eq("id", id);
+      let result;
+      try {
+        result = await Promise.race([
+          sb.from("slots").update(payload).eq("id", id),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('DB 저장 타임아웃 (10초)')), 10000))
+        ]);
+      } catch(err) {
+        console.error('❌ DB 저장 중 예외:', err);
+        toast("저장 실패", err.message);
+        return;
+      }
+      
+      const { error } = result;
       console.log('🔵 DB 저장 결과 - error:', error);
-      if(error){ console.error(error); toast("저장 실패", error.message); return; }
+      if(error){ 
+        console.error('❌ Supabase 에러:', error); 
+        toast("저장 실패", error.message); 
+        return; 
+      }
       
       console.log('🔵 조합키워드 저장 시작');
       // ✅ 전역 메모리에 조합키워드 저장 (영구 보존)
