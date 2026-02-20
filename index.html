@@ -1530,6 +1530,21 @@
     }
 
     function renderSlotsPage(){
+      // ✅ 현재 수정 중인 input 값들을 slotDrafts에 저장
+      document.querySelectorAll('input[data-f], select[data-f]').forEach(inp => {
+        const id = inp.getAttribute("data-id");
+        const f = inp.getAttribute("data-f");
+        if(id && f && slotDrafts.has(id)){
+          const d = slotDrafts.get(id);
+          if(f==="kw") d.kw = inp.value;
+          if(f==="kw2") d.kw2 = inp.value;
+          if(f==="kw3") d.kw3 = inp.value;
+          if(f==="link") d.link = inp.value;
+          if(f==="catalogLink") d.catalogLink = inp.value;
+          if(f==="memo") d.memo = inp.value;
+        }
+      });
+      
       const all = slotsCache.map(s=>({ ...s, expired: computeExpired(s) }));
       const slots = visibleSlotsForUser(all);
 
