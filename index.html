@@ -1599,10 +1599,9 @@
       }
       rows.sort((a,b)=> (a.no||0)-(b.no||0));
 
-      // ✅ 전체 슬롯에서의 순서 계산
-      const allVisibleSlots = visibleSlotsForUser(all);
+      // ✅ 전체 슬롯에서의 순서 계산 (모든 사용자 포함, 권한 무관)
       const totalSlotMap = new Map();
-      allVisibleSlots.forEach((slot, idx) => {
+      all.forEach((slot, idx) => {
         totalSlotMap.set(slot.id, idx + 1);
       });
 
