@@ -1599,12 +1599,6 @@
       }
       rows.sort((a,b)=> (a.no||0)-(b.no||0));
 
-      // ✅ 전체 슬롯에서의 순서 계산 (모든 사용자 포함, 권한 무관)
-      const totalSlotMap = new Map();
-      all.forEach((slot, idx) => {
-        totalSlotMap.set(slot.id, idx + 1);
-      });
-
       // ✅ 일괄 작업 버튼 렌더링
       const bulkBar = document.getElementById("slotBulkBar");
       if(isAdminLike(profile)){
@@ -1705,12 +1699,12 @@
         const companyName = userObj?.company_name || "";
         const loginId = userObj?.login_id || "-";
         
-        // ✅ 번호 2줄 (화면순서 / 전체순서)
-        const totalNum = totalSlotMap.get(s.id) || "-";
+        // ✅ 번호 2줄 (화면순서 / DB의 no)
+        const dbNo = s.no || "-";
         const numberCell = `
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
             <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--text);font-weight:700">${displayNumber}</div>
-            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">(${totalNum})</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">(${dbNo})</div>
           </div>
         `;
 
