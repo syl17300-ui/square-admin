@@ -1753,9 +1753,10 @@
         btn.addEventListener("click", ()=>{
           const act = btn.getAttribute("data-act");
           const id = btn.getAttribute("data-id");
+          console.log(`버튼 클릭: ${act}, ID: ${id}`); // 디버깅
           if(act==="edit"){ editingSlotIds.add(id); const s = slotsCache.find(x=>x.id===id); if(s) ensureSlotDraft(s); renderSlotsPage(); toast("수정 모드","저장/취소 가능"); return; }
           if(act==="cancel"){ editingSlotIds.delete(id); slotDrafts.delete(id); renderSlotsPage(); return; }
-          if(act==="save")    { saveSlotInline(id); return; }
+          if(act==="save")    { console.log('저장 함수 호출!'); saveSlotInline(id); return; }
           if(act==="open")    { openSlot(id); return; }
           if(act==="hide")    { hideSlot(id); return; }
           if(act==="withdraw"){ withdrawSlot(id); return; }
