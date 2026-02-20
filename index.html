@@ -452,6 +452,11 @@
       background: rgba(251,146,60,.10);
       color: #fdba74;
     }
+    .tag.cyan {
+      border-color: rgba(34,211,238,.35);
+      background: rgba(34,211,238,.10);
+      color: #67e8f9;
+    }
     .typeTag { font-weight: 700; }
 
     /* ────────────────────────────────────────
@@ -1259,9 +1264,21 @@
         "Prefix": "orange",
         "Review": "gold",
         "Option": "red",
-        "Q&A keyword": "gray"
+        "Q&A keyword": "cyan"
       };
       return colorMap[value] || "gray";
+    }
+
+    // 페이지 상태 저장/복원
+    function savePageState(){
+      localStorage.setItem('currentPage', activePage);
+    }
+
+    function loadPageState(){
+      const saved = localStorage.getItem('currentPage');
+      if(saved && PAGES.find(p => p.key === saved)){
+        activePage = saved;
+      }
     }
 
     let authUser = null;
@@ -1446,6 +1463,9 @@
       document.getElementById("appView").style.display = isLoggedIn ? "block" : "none";
       if(!isLoggedIn) return;
 
+      // ✅ 저장된 페이지 복원
+      loadPageState();
+
       const roleText = isMasterAccount(profile) ? "마스터 계정" : (ROLE_LABEL[profile.role] || profile.role);
       document.getElementById("whoText").textContent =
         `${profile.company_name ? profile.company_name + " " : ""}${profile.login_id} (${roleText})`;
@@ -1457,7 +1477,7 @@
         const b = document.createElement("button");
         b.className = "tab" + (p.key===activePage ? " active" : "");
         b.textContent = p.label;
-        b.onclick = ()=>{ activePage = p.key; render(); };
+        b.onclick = ()=>{ activePage = p.key; savePageState(); render(); };
         nav.appendChild(b);
       });
 
@@ -1554,6 +1574,13 @@
       }
       rows.sort((a,b)=> (a.no||0)-(b.no||0));
 
+      // ✅ 전체 슬롯에서의 순서 계산
+      const allVisibleSlots = visibleSlotsForUser(all);
+      const totalSlotMap = new Map();
+      allVisibleSlots.forEach((slot, idx) => {
+        totalSlotMap.set(slot.id, idx + 1);
+      });
+
       // ✅ 일괄 작업 버튼 렌더링
       const bulkBar = document.getElementById("slotBulkBar");
       if(isAdminLike(profile)){
@@ -1577,6 +1604,9 @@
 
       const tb = document.getElementById("slotTbody");
       tb.innerHTML = "";
+
+      // ✅ 표시 순서 번호
+      let displayNumber = 1;
 
       for(const s of rows){
         const tr = document.createElement("tr");
@@ -1643,13 +1673,27 @@
         }
 
         const expSoon = isExpiringTomorrow(s.endDate);
-        const who = (isAdminLike(profile))
-          ? (usersCache.find(u=>u.user_id===s.user_uid)
-              ? ((usersCache.find(u=>u.user_id===s.user_uid).company_name||"")
-                  ? `${usersCache.find(u=>u.user_id===s.user_uid).company_name}(${usersCache.find(u=>u.user_id===s.user_uid).login_id})`
-                  : usersCache.find(u=>u.user_id===s.user_uid).login_id)
-              : "-")
-          : (profile.company_name ? `${profile.company_name}(${profile.login_id})` : profile.login_id);
+        
+        // ✅ 사용자 정보 분리
+        const userObj = isAdminLike(profile) 
+          ? usersCache.find(u=>u.user_id===s.user_uid) 
+          : profile;
+        const companyName = userObj?.company_name || "";
+        const loginId = userObj?.login_id || "-";
+        
+        // ✅ 번호 2줄 (화면순서 / 전체순서)
+        const totalNum = totalSlotMap.get(s.id) || "-";
+        const numberCell = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+            <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--text);font-weight:700">${displayNumber}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">(${totalNum})</div>
+          </div>
+        `;
+
+        // ✅ 사용자 2줄
+        const userCell = companyName
+          ? `<div style="font-weight:700;font-size:14px;line-height:1.4">${escapeHtml(companyName)}</div><div style="font-size:12px;color:var(--muted);line-height:1.4">(${escapeHtml(loginId)})</div>`
+          : `<div style="font-weight:700;font-size:14px;line-height:1.4">${escapeHtml(loginId)}</div>`;
 
         // ✅ 체크박스 추가
         const canCheck = isAdminLike(profile) && !s.expired && !s.withdrawPending && (s.opened || s.saved);
@@ -1659,22 +1703,23 @@
 
         tr.innerHTML = `
           <td>${checkCell}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)">${escapeHtml(String(s.no||"-"))}</td>
-          <td><div style="font-weight:700;font-size:15px">${escapeHtml(who)}</div></td>
-          <td><span class="tag gold typeTag" style="font-size:14px">${escapeHtml(typeDisplay(s.type))}</span></td>
+          <td>${numberCell}</td>
+          <td>${userCell}</td>
+          <td><span class="tag gold typeTag" style="font-size:13px">${escapeHtml(typeDisplay(s.type))}</span></td>
           <td>${storeIdTagHtml(s)}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:14px">${escapeHtml(s.startDate||"-")}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:14px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:13px">${escapeHtml(s.startDate||"-")}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:13px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
           <td>${slotStateTag(s)}</td>
           <td>${editCell}</td>
-          <td style="font-size:15px">${kwCell}</td>
+          <td style="font-size:14px">${kwCell}</td>
           <td>${kw2Cell}</td>
           <td>${kw3Cell}</td>
           <td>${linkCell}</td>
-          <td>${memoCell}</td>
+          <td style="font-size:13px">${memoCell}</td>
           <td>${manage}</td>
         `;
         tb.appendChild(tr);
+        displayNumber++; // 표시 번호 증가
       }
 
       // ✅ 체크박스 이벤트
