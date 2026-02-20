@@ -818,7 +818,7 @@
             <div class="row">
               <div class="field" style="min-width:260px">
                 <div class="label">검색</div>
-                <input id="slotSearch" class="input" placeholder="키워드 / 사용자ID / 링크 일부 / 스토어ID" oninput="renderSlotsPage()" />
+                <input id="slotSearch" class="input" placeholder="키워드 / 사용자ID / 링크 일부" oninput="renderSlotsPage()" />
               </div>
               <div class="field" style="min-width:200px">
                 <div class="label">필터</div>
@@ -847,7 +847,6 @@
                   <th style="width:60px">번호</th>
                   <th style="width:140px">사용자</th>
                   <th style="width:85px">타입</th>
-                  <th style="width:120px">스토어ID</th>
                   <th style="width:95px">시작일</th>
                   <th style="width:95px">만료일</th>
                   <th style="width:75px">상태</th>
@@ -855,8 +854,8 @@
                   <th style="width:120px">메인키워드</th>
                   <th style="width:120px">조합키워드1</th>
                   <th style="width:120px">조합키워드2</th>
-                  <th style="width:160px">링크</th>
-                  <th style="width:110px">메모</th>
+                  <th style="width:200px">링크</th>
+                  <th style="width:130px">메모</th>
                   <th style="width:240px">관리</th>
                 </tr>
               </thead>
@@ -1732,7 +1731,6 @@
           <td>${numberCell}</td>
           <td>${userCell}</td>
           <td><span class="tag gold typeTag" style="font-size:13px">${escapeHtml(typeDisplay(s.type))}</span></td>
-          <td>${storeIdTagHtml(s)}</td>
           <td style="font-family:'DM Mono',monospace;font-size:13px">${escapeHtml(s.startDate||"-")}</td>
           <td style="font-family:'DM Mono',monospace;font-size:13px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
           <td>${slotStateTag(s)}</td>
