@@ -2200,12 +2200,18 @@
         if(!res.ok){ console.error("function error:", data); toast("계정 생성 실패", data.error || `status ${res.status}`); return; }
         if(data?.error){ console.error("function returned error:", data); toast("계정 생성 실패", data.error); return; }
         
-        // ✅ profiles에 생성자 정보 업데이트
-        if(data?.userId){
-          await sb.from("profiles").update({
-            created_by: profile.login_id,
-            created_by_name: profile.company_name || profile.login_id
-          }).eq("user_id", data.userId);
+        // ✅ profiles에 생성자 정보 업데이트 (login_id로 찾기)
+        console.log('계정 생성 완료, created_by 업데이트 시작:', login_id);
+        const updateResult = await sb.from("profiles").update({
+          created_by: profile.login_id,
+          created_by_name: profile.company_name || profile.login_id
+        }).eq("login_id", login_id);
+        
+        console.log('created_by 업데이트 결과:', updateResult);
+        if(updateResult.error){
+          console.error('created_by 업데이트 실패:', updateResult.error);
+        } else {
+          console.log('✅ created_by 업데이트 성공!');
         }
         
         logEvent(`계정 생성: ${login_id} (${role}) 업체명=${company_name}`);
