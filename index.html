@@ -1766,38 +1766,63 @@
     }
 
     async function saveSlotInline(id){
+      console.log('🔵 saveSlotInline 시작, ID:', id);
       const s = slotsCache.find(x=>x.id===id);
+      console.log('🔵 슬롯 찾기:', s ? '성공' : '실패');
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
+      
+      console.log('🔵 만료 체크:', computeExpired(s));
       if(computeExpired(s)){ toast("만료된 슬롯"); return; }
+      
+      console.log('🔵 철회 대기 체크:', s.withdrawPending);
       if(s.withdrawPending){ toast("철회 대기 슬롯"); return; }
+      
       const d = slotDrafts.get(id) || { kw: s.keyword||"", kw2: "Not applied", kw3: "Not applied", link: s.link||"", catalogLink: s.catalogLink||"", memo: s.memo||"" };
+      console.log('🔵 Draft 데이터:', d);
+      
       const kw = (d.kw || "").trim();
       const kw2 = (d.kw2 || "Not applied").trim();
       const kw3 = (d.kw3 || "Not applied").trim();
       const link = (d.link || "").trim();
       const catalogLink = (d.catalogLink || "").trim(), memo = (d.memo || "").trim();
       const wonbu = isTypeWonbu(s.type);
+      
+      console.log('🔵 필수값 체크 - kw:', kw, 'link:', link);
       if(!kw || !link){ toast("저장 실패","메인키워드/상품링크는 필수입니다."); return; }
       if(wonbu && !catalogLink){ toast("저장 실패","원부 타입은 카탈로그 링크도 필수입니다."); return; }
+      
       const storeId = extractStoreId(link);
+      console.log('🔵 스토어ID 추출:', storeId);
       
       // ✅ DB 저장 (조합키워드는 제외)
       const payload = { keyword: kw, link, catalog_link: wonbu ? catalogLink : "", memo, store_id: storeId, opened: true, saved: true, hidden_by_admin: false, withdraw_pending: false };
+      console.log('🔵 DB 저장 시작, payload:', payload);
+      
       const { error } = await sb.from("slots").update(payload).eq("id", id);
+      console.log('🔵 DB 저장 결과 - error:', error);
       if(error){ console.error(error); toast("저장 실패", error.message); return; }
       
+      console.log('🔵 조합키워드 저장 시작');
       // ✅ 전역 메모리에 조합키워드 저장 (영구 보존)
       keywordMemory.set(id, { kw2, kw3 });
       saveKeywordMemory(); // localStorage에 저장
       
+      console.log('🔵 로그 이벤트');
       logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}, storeId=${storeId||"-"}`);
+      
+      console.log('🔵 토스트 표시');
       toast("저장 완료", storeId ? `스토어ID: ${storeId}` : "스토어ID 추출 실패(링크 확인)");
+      
+      console.log('🔵 정리 작업');
       editingSlotIds.delete(id); 
       slotDrafts.delete(id);
       
+      console.log('🔵 슬롯 재로드');
       await fetchSlots();
+      console.log('🔵 화면 렌더링');
       renderSlotsPage();
       if(activePage==="dash") renderDash();
+      console.log('🔵 saveSlotInline 완료!');
     }
 
     async function openSlot(id){
