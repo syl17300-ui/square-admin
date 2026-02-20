@@ -368,7 +368,7 @@
     ──────────────────────────────────────── */
     .tableScroll {
       overflow: auto;
-      max-height: 70vh;
+      max-height: calc(100vh - 320px);
       border-top: 1px solid var(--border2);
       margin-top: 16px;
     }
@@ -739,21 +739,18 @@
       <div class="loginBody">
         <div class="row">
           <div class="field">
-            <div class="label">아이디 또는 이메일</div>
-            <input id="loginId" class="input" placeholder="아이디" autocomplete="username" />
+            <div class="label" style="font-size:16px;font-weight:700">아이디 또는 이메일</div>
+            <input id="loginId" class="input" placeholder="syl17300 또는 @square.local" autocomplete="username" />
           </div>
         </div>
         <div class="row" style="margin-top:12px">
           <div class="field">
-            <div class="label">비밀번호</div>
+            <div class="label" style="font-size:16px;font-weight:700">비밀번호</div>
             <input id="loginPw" class="input" type="password" placeholder="비밀번호" autocomplete="current-password" />
           </div>
         </div>
         <div class="row" style="justify-content:flex-end;align-items:center;margin-top:16px">
           <button class="btn btnNeon" onclick="login()">로그인</button>
-        </div>
-        <div class="hint" style="margin-top:12px">
-          ※ 아이디만 입력해도 자동으로 이메일로 변환되어 로그인됩니다.
         </div>
       </div>
     </div>
@@ -805,7 +802,6 @@
           <div class="cardHeader">
             <div class="h">
               <div class="title">슬롯관리</div>
-              <div class="sub">✅ 원부 타입은 상품링크 + 카탈로그 링크 2칸</div>
             </div>
             <div class="rightActions">
               <div class="actionBar" id="slotBulkBar"></div>
@@ -831,7 +827,7 @@
                 </select>
               </div>
               <div class="field" style="min-width:200px">
-                <div class="label">사용자(관리자용)</div>
+                <div class="label">사용자</div>
                 <select id="slotUserFilter" onchange="renderSlotsPage()"></select>
               </div>
             </div>
@@ -843,20 +839,20 @@
               <thead>
                 <tr>
                   <th style="width:40px">선택</th>
-                  <th style="width:70px">번호</th>
-                  <th style="width:130px">사용자</th>
+                  <th style="width:60px">번호</th>
+                  <th style="width:140px">사용자</th>
                   <th style="width:85px">타입</th>
                   <th style="width:120px">스토어ID</th>
                   <th style="width:95px">시작일</th>
                   <th style="width:95px">만료일</th>
                   <th style="width:75px">상태</th>
                   <th style="width:80px">수정</th>
-                  <th style="width:110px">메인키워드</th>
-                  <th style="width:110px">조합키워드1</th>
-                  <th style="width:110px">조합키워드2</th>
-                  <th style="width:150px">링크</th>
-                  <th style="width:100px">메모</th>
-                  <th style="width:230px">관리</th>
+                  <th style="width:120px">메인키워드</th>
+                  <th style="width:120px">조합키워드1</th>
+                  <th style="width:120px">조합키워드2</th>
+                  <th style="width:160px">링크</th>
+                  <th style="width:110px">메모</th>
+                  <th style="width:240px">관리</th>
                 </tr>
               </thead>
               <tbody id="slotTbody"></tbody>
@@ -1087,6 +1083,15 @@
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ✅ Supabase 세션 자동 갱신
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('✅ 세션 자동 갱신됨');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('세션 만료됨');
+      }
+    });
+
     /***********************
      * 1) 유틸
      ***********************/
@@ -1190,6 +1195,37 @@
 
     // ✅ 조합키워드 전역 메모리 저장소 (슬롯ID별로 저장)
     const keywordMemory = new Map();
+
+    // ✅ localStorage에서 조합키워드 불러오기
+    function loadKeywordMemory(){
+      try {
+        const saved = localStorage.getItem('slotKeywords');
+        if(saved){
+          const data = JSON.parse(saved);
+          Object.keys(data).forEach(id => {
+            keywordMemory.set(id, data[id]);
+          });
+        }
+      } catch(e) {
+        console.error('조합키워드 불러오기 실패:', e);
+      }
+    }
+
+    // ✅ localStorage에 조합키워드 저장
+    function saveKeywordMemory(){
+      try {
+        const data = {};
+        keywordMemory.forEach((value, key) => {
+          data[key] = value;
+        });
+        localStorage.setItem('slotKeywords', JSON.stringify(data));
+      } catch(e) {
+        console.error('조합키워드 저장 실패:', e);
+      }
+    }
+
+    // 페이지 로드 시 조합키워드 복원
+    loadKeywordMemory();
 
     const TYPE_DISPLAY_MAP = {
       "리워드(단일)": "스퀘어(단일)","리워드(원부)": "스퀘어(원부)",
@@ -1490,9 +1526,7 @@
       }
 
       const hint = document.getElementById("slotHint");
-      hint.innerHTML = (isAdminLike(profile))
-        ? `관리자 모드: 전체 슬롯 조회 · 사용자에게는 <b class="slotHintBold">오픈/정상</b> 슬롯만 노출`
-        : `사용자 모드: <b class="slotHintBold">오픈됨/정상</b> 슬롯만 보입니다.`;
+      hint.innerHTML = "";
 
       const q = (document.getElementById("slotSearch").value || "").trim().toLowerCase();
       const st = document.getElementById("slotFilter").value || "ALL";
@@ -1520,13 +1554,6 @@
       }
       rows.sort((a,b)=> (a.no||0)-(b.no||0));
 
-      // ✅ 전체 슬롯에서의 순서 계산 (모든 사용자 포함)
-      const allVisibleSlots = visibleSlotsForUser(all);
-      const totalSlotMap = new Map();
-      allVisibleSlots.forEach((slot, idx) => {
-        totalSlotMap.set(slot.id, idx + 1);
-      });
-
       // ✅ 일괄 작업 버튼 렌더링
       const bulkBar = document.getElementById("slotBulkBar");
       if(isAdminLike(profile)){
@@ -1550,9 +1577,6 @@
 
       const tb = document.getElementById("slotTbody");
       tb.innerHTML = "";
-
-      // ✅ 표시 순서대로 번호 부여
-      let displayNumber = 1;
 
       for(const s of rows){
         const tr = document.createElement("tr");
@@ -1619,31 +1643,13 @@
         }
 
         const expSoon = isExpiringTomorrow(s.endDate);
-        
-        // ✅ 사용자 정보 분리 (업체명 / 아이디)
-        const userObj = isAdminLike(profile) 
-          ? usersCache.find(u=>u.user_id===s.user_uid) 
-          : profile;
-        const companyName = userObj?.company_name || "";
-        const loginId = userObj?.login_id || "-";
-        
-        // ✅ 번호 2줄 (화면순서 / 전체순서) - 가운데 정렬
-        const totalNum = totalSlotMap.get(s.id) || "-";
-        const numberCell = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
-            <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--text);font-weight:700;line-height:1.3">
-              ${displayNumber}
-            </div>
-            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);line-height:1.3">
-              (${totalNum})
-            </div>
-          </div>
-        `;
-
-        // ✅ 사용자 2줄 (업체명 / 아이디)
-        const userCell = companyName
-          ? `<div style="font-weight:700;font-size:14px;line-height:1.4">${escapeHtml(companyName)}</div><div style="font-size:12px;color:var(--muted);line-height:1.4">(${escapeHtml(loginId)})</div>`
-          : `<div style="font-weight:700;font-size:14px;line-height:1.4">${escapeHtml(loginId)}</div>`;
+        const who = (isAdminLike(profile))
+          ? (usersCache.find(u=>u.user_id===s.user_uid)
+              ? ((usersCache.find(u=>u.user_id===s.user_uid).company_name||"")
+                  ? `${usersCache.find(u=>u.user_id===s.user_uid).company_name}(${usersCache.find(u=>u.user_id===s.user_uid).login_id})`
+                  : usersCache.find(u=>u.user_id===s.user_uid).login_id)
+              : "-")
+          : (profile.company_name ? `${profile.company_name}(${profile.login_id})` : profile.login_id);
 
         // ✅ 체크박스 추가
         const canCheck = isAdminLike(profile) && !s.expired && !s.withdrawPending && (s.opened || s.saved);
@@ -1653,23 +1659,22 @@
 
         tr.innerHTML = `
           <td>${checkCell}</td>
-          <td>${numberCell}</td>
-          <td>${userCell}</td>
-          <td><span class="tag gold typeTag" style="font-size:13px">${escapeHtml(typeDisplay(s.type))}</span></td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)">${escapeHtml(String(s.no||"-"))}</td>
+          <td><div style="font-weight:700;font-size:15px">${escapeHtml(who)}</div></td>
+          <td><span class="tag gold typeTag" style="font-size:14px">${escapeHtml(typeDisplay(s.type))}</span></td>
           <td>${storeIdTagHtml(s)}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:13px">${escapeHtml(s.startDate||"-")}</td>
-          <td style="font-family:'DM Mono',monospace;font-size:13px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px">${escapeHtml(s.startDate||"-")}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px" class="${expSoon ? "expSoon" : ""}">${escapeHtml(s.endDate||"-")}</td>
           <td>${slotStateTag(s)}</td>
           <td>${editCell}</td>
-          <td style="font-size:14px">${kwCell}</td>
+          <td style="font-size:15px">${kwCell}</td>
           <td>${kw2Cell}</td>
           <td>${kw3Cell}</td>
           <td>${linkCell}</td>
-          <td style="font-size:13px">${memoCell}</td>
+          <td>${memoCell}</td>
           <td>${manage}</td>
         `;
         tb.appendChild(tr);
-        displayNumber++; // ✅ 표시 번호 증가
       }
 
       // ✅ 체크박스 이벤트
@@ -1737,6 +1742,7 @@
       
       // ✅ 전역 메모리에 조합키워드 저장 (영구 보존)
       keywordMemory.set(id, { kw2, kw3 });
+      saveKeywordMemory(); // localStorage에 저장
       
       logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}, storeId=${storeId||"-"}`);
       toast("저장 완료", storeId ? `스토어ID: ${storeId}` : "스토어ID 추출 실패(링크 확인)");
