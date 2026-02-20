@@ -1807,8 +1807,19 @@
       const kw = (d.kw || "").trim();
       const kw2 = (d.kw2 || "Not applied").trim();
       const kw3 = (d.kw3 || "Not applied").trim();
+      
+      console.log('🔵 변수 할당 전 - d.link:', d.link);
+      console.log('🔵 d.link 타입:', typeof d.link);
+      console.log('🔵 d.link 길이:', d.link ? d.link.length : 'null/undefined');
+      
       const link = (d.link || "").trim();
-      const catalogLink = (d.catalogLink || "").trim(), memo = (d.memo || "").trim();
+      const catalogLink = (d.catalogLink || "").trim();
+      const memo = (d.memo || "").trim();
+      
+      console.log('🔵 변수 할당 후 - link:', link);
+      console.log('🔵 link 타입:', typeof link);
+      console.log('🔵 link 길이:', link.length);
+      
       const wonbu = isTypeWonbu(s.type);
       
       console.log('🔵 필수값 체크 - kw:', kw, 'link:', link);
