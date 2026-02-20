@@ -1527,6 +1527,20 @@
     }
 
     function renderSlotsPage(){
+      // ✅ sessionStorage에서 slotDrafts 복원
+      try {
+        const saved = sessionStorage.getItem('slotDrafts');
+        if(saved){
+          const draftsObj = JSON.parse(saved);
+          Object.keys(draftsObj).forEach(key => {
+            slotDrafts.set(key, draftsObj[key]);
+          });
+          console.log('✅ Draft 복원됨:', slotDrafts.size, '개');
+        }
+      } catch(e) {
+        console.error('Draft 복원 실패:', e);
+      }
+      
       // ✅ 현재 수정 중인 input 값들을 slotDrafts에 저장
       document.querySelectorAll('input[data-f], select[data-f]').forEach(inp => {
         const id = inp.getAttribute("data-id");
@@ -1756,6 +1770,18 @@
           if(f==="link") d.link = inp.value;
           if(f==="catalogLink") d.catalogLink = inp.value;
           if(f==="memo") d.memo = inp.value;
+          
+          // ✅ sessionStorage에도 저장
+          try {
+            const draftsObj = {};
+            slotDrafts.forEach((value, key) => {
+              draftsObj[key] = value;
+            });
+            sessionStorage.setItem('slotDrafts', JSON.stringify(draftsObj));
+            console.log('✅ Draft 저장됨:', id, f, inp.value);
+          } catch(e) {
+            console.error('Draft 저장 실패:', e);
+          }
         };
         inp.addEventListener("input", handler);
         inp.addEventListener("change", handler);
