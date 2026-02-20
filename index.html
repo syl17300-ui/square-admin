@@ -2216,9 +2216,18 @@
         
         logEvent(`계정 생성: ${login_id} (${role}) 업체명=${company_name}`);
         toast("계정 생성 완료",`${company_name}(${login_id}) / ${ROLE_LABEL[role] || role}`);
-        document.getElementById("u_id").value = ""; document.getElementById("u_pw").value = ""; document.getElementById("u_company").value = "";
-        await fetchUsersIfAdmin(); await fetchSlots(); renderUsers(); renderAssign();
-        if(activePage==="cleanup") renderCleanup();
+        document.getElementById("u_id").value = ""; 
+        document.getElementById("u_pw").value = ""; 
+        document.getElementById("u_company").value = "";
+        
+        // ✅ 생성자 정보가 반영되도록 약간 대기 후 다시 불러오기
+        setTimeout(async () => {
+          await fetchUsersIfAdmin(); 
+          await fetchSlots(); 
+          renderUsers(); 
+          renderAssign();
+          if(activePage==="cleanup") renderCleanup();
+        }, 500);
       } catch(e){ console.error("invoke exception:", e); toast("계정 생성 실패","Failed to send a request to the Edge Function"); }
     }
 
