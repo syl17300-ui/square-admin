@@ -1849,21 +1849,27 @@
       const wonbu = isTypeWonbu(s.type);
       
       console.log('🔵 필수값 체크 - kw:', kw, 'link:', link);
-      if(!kw || !link){ toast("저장 실패","메인키워드/상품링크는 필수입니다."); return; }
-      if(wonbu && !catalogLink){ toast("저장 실패","원부 타입은 카탈로그 링크도 필수입니다."); return; }
+      if(!kw || !link){ 
+        console.log('❌ 필수값 누락!'); 
+        toast("저장 실패","메인키워드/상품링크는 필수입니다."); 
+        return; 
+      }
+      if(wonbu && !catalogLink){ 
+        console.log('❌ 원부 카탈로그 링크 누락!'); 
+        toast("저장 실패","원부 타입은 카탈로그 링크도 필수입니다."); 
+        return; 
+      }
       
-      const storeId = extractStoreId(link);
-      console.log('🔵 스토어ID 추출:', storeId);
+      console.log('🔵 필수값 체크 통과!');
       
       // ✅ DB 저장 (조합키워드 포함!)
       const payload = { 
         keyword: kw, 
-        keyword2: kw2,  // ✅ DB에 저장
-        keyword3: kw3,  // ✅ DB에 저장
+        keyword2: kw2,
+        keyword3: kw3,
         link, 
         catalog_link: wonbu ? catalogLink : "", 
         memo, 
-        store_id: storeId, 
         opened: true, 
         saved: true, 
         hidden_by_admin: false, 
@@ -1889,10 +1895,10 @@
       }
       
       console.log('🔵 로그 이벤트');
-      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}, storeId=${storeId||"-"}`);
+      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}`);
       
       console.log('🔵 토스트 표시');
-      toast("저장 완료", storeId ? `스토어ID: ${storeId}` : "스토어ID 추출 실패(링크 확인)");
+      toast("저장 완료");
       
       console.log('🔵 정리 작업');
       editingSlotIds.delete(id); 
