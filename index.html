@@ -2294,6 +2294,11 @@
       };
       
       users.forEach(u=>{
+        // ✅ 디버그: 생성자 정보 확인
+        if(isMasterAccount(profile)){
+          console.log('사용자:', u.login_id, '생성자 ID:', u.created_by, '생성자 이름:', u.created_by_name);
+        }
+        
         const tr = document.createElement("tr");
         const isEditing = editingUserIds.has(u.user_id);
         const roleColor = roleColorMap[u.role] || "gray";
