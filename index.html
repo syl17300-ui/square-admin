@@ -1793,6 +1793,17 @@
 
     async function saveSlotInline(id){
       console.log('🔵 saveSlotInline 시작, ID:', id);
+      
+      // ✅ 세션 확인
+      console.log('🔵 세션 확인 중...');
+      const { data: { session } } = await sb.auth.getSession();
+      console.log('🔵 세션 상태:', session ? '✅ 유효' : '❌ 만료');
+      if(!session){
+        toast("세션 만료", "페이지를 새로고침해주세요 (F5)");
+        console.error('❌ 세션이 만료되었습니다. 새로고침 필요!');
+        return;
+      }
+      
       const s = slotsCache.find(x=>x.id===id);
       console.log('🔵 슬롯 찾기:', s ? '성공' : '실패');
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
