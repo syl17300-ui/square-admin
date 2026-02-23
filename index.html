@@ -1957,6 +1957,7 @@
       console.log('🔵 정리 작업');
       editingSlotIds.delete(id); 
       slotDrafts.delete(id);
+      saveEditingState(); // ✅ sessionStorage 업데이트
       
       console.log('🔵 슬롯 재로드');
       await fetchSlots();
