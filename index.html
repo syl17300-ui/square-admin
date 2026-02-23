@@ -1190,6 +1190,28 @@
     const editingUserIds = new Set();
     const userDrafts = new Map();
 
+    // ✅ editingSlotIds를 sessionStorage에 저장/복원
+    function saveEditingState(){
+      try {
+        const editingArray = Array.from(editingSlotIds);
+        sessionStorage.setItem('editingSlotIds', JSON.stringify(editingArray));
+      } catch(e) {
+        console.error('editingSlotIds 저장 실패:', e);
+      }
+    }
+    
+    function loadEditingState(){
+      try {
+        const saved = sessionStorage.getItem('editingSlotIds');
+        if(saved){
+          const editingArray = JSON.parse(saved);
+          editingArray.forEach(id => editingSlotIds.add(id));
+        }
+      } catch(e) {
+        console.error('editingSlotIds 복원 실패:', e);
+      }
+    }
+
     // ✅ 체크박스 선택 관리
     const selectedSlotIds = new Set();
     const selectedCleanupIds = new Set();
@@ -1542,6 +1564,9 @@
         memoHeader.textContent = isMasterAccount(profile) ? "생성자" : "메모";
       }
       
+      // ✅ editingSlotIds 복원
+      loadEditingState();
+      
       // ✅ sessionStorage에서 slotDrafts 복원
       try {
         const saved = sessionStorage.getItem('slotDrafts');
@@ -1809,8 +1834,22 @@
           console.log(`버튼 클릭: ${act}, ID: ${id}`);
           
           try {
-            if(act==="edit"){ editingSlotIds.add(id); const s = slotsCache.find(x=>x.id===id); if(s) ensureSlotDraft(s); renderSlotsPage(); toast("수정 모드","저장/취소 가능"); return; }
-            if(act==="cancel"){ editingSlotIds.delete(id); slotDrafts.delete(id); renderSlotsPage(); return; }
+            if(act==="edit"){ 
+              editingSlotIds.add(id); 
+              saveEditingState(); // ✅ 저장
+              const s = slotsCache.find(x=>x.id===id); 
+              if(s) ensureSlotDraft(s); 
+              renderSlotsPage(); 
+              toast("수정 모드","저장/취소 가능"); 
+              return; 
+            }
+            if(act==="cancel"){ 
+              editingSlotIds.delete(id); 
+              saveEditingState(); // ✅ 저장
+              slotDrafts.delete(id); 
+              renderSlotsPage(); 
+              return; 
+            }
             if(act==="save")    { 
               console.log('저장 함수 호출 시작!'); 
               await saveSlotInline(id); 
@@ -2405,7 +2444,10 @@
      ***********************/
     function renderCleanup(){
       if(!isAdminLike(profile)){ activePage="slots"; render(); return; }
-      const slots = slotsCache.map(s=>({ ...s, expired: computeExpired(s) })).filter(s=>!!s.withdrawPending);
+      
+      // ✅ 철회 대기 또는 만료된 슬롯 모두 표시
+      const slots = slotsCache.map(s=>({ ...s, expired: computeExpired(s) })).filter(s => s.withdrawPending || s.expired);
+      
       const cleanUser = document.getElementById("cleanUser");
       const users = usersCache.filter(u=>!(u.role==="ADMIN" && u.login_id===MASTER_ID) && !(u.role==="MASTER" && u.login_id===MASTER_ID));
       const prev = cleanUser.value || "ALL";
