@@ -1523,9 +1523,15 @@
      ***********************/
     function visibleSlotsForUser(allSlots){
       const slots = allSlots.map(s=>({ ...s, expired: computeExpired(s) }));
-      if(isAdminLike(profile)) return slots;
+      
+      // ✅ 관리자: 만료되지 않은 슬롯만 표시
+      if(isAdminLike(profile)) {
+        return slots.filter(s => !s.expired);
+      }
+      
+      // ✅ 일반 사용자: 만료되지 않고, 오픈/저장된 슬롯만
       return slots.filter(s =>
-        (s.user_uid === authUser.id) && !s.hiddenByAdmin && !s.withdrawPending && (s.opened || s.saved)
+        (s.user_uid === authUser.id) && !s.hiddenByAdmin && !s.withdrawPending && (s.opened || s.saved) && !s.expired
       );
     }
 
