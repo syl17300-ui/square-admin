@@ -1933,11 +1933,19 @@
       
       let error;
       try {
-        const result = await sb.from("slots").update(payload).eq("id", id);
+        // ✅ 10초 타임아웃 추가
+        const savePromise = sb.from("slots").update(payload).eq("id", id);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('DB 저장 타임아웃 (10초)')), 10000)
+        );
+        
+        const result = await Promise.race([savePromise, timeoutPromise]);
         error = result.error;
+        
+        console.log('🔵 DB 저장 완료, result:', result);
       } catch(err) {
         console.error('❌ DB 저장 중 예외:', err);
-        toast("저장 실패", err.message);
+        toast("저장 실패", err.message || "DB 연결 오류");
         return;
       }
       
