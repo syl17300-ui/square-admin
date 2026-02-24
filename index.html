@@ -1885,28 +1885,6 @@
     async function saveSlotInline(id){
       console.log('🔵 saveSlotInline 시작, ID:', id);
       
-      // ✅ 세션 갱신 (5초 타임아웃)
-      try {
-        console.log('🔵 세션 갱신 시도...');
-        
-        const refreshPromise = sb.auth.refreshSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('세션 갱신 타임아웃')), 5000)
-        );
-        
-        const { data: { session }, error: sessionError } = await Promise.race([refreshPromise, timeoutPromise]);
-        
-        if(sessionError || !session){
-          console.warn('⚠️ 세션 갱신 실패, 기존 세션으로 시도:', sessionError);
-          // 세션 갱신 실패해도 기존 세션으로 계속 진행
-        } else {
-          console.log('✅ 세션 갱신 성공!');
-        }
-      } catch(e) {
-        console.warn('⚠️ 세션 갱신 예외, 기존 세션으로 계속:', e.message);
-        // 예외 발생해도 계속 진행
-      }
-      
       const s = slotsCache.find(x=>x.id===id);
       console.log('🔵 슬롯 찾기:', s ? '성공' : '실패');
       if(!s){ toast("슬롯을 찾을 수 없음"); return; }
