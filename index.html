@@ -1841,45 +1841,51 @@
         inp.addEventListener("change", handler);
       });
 
-      tb.querySelectorAll("button[data-act]").forEach(btn=>{
-        btn.addEventListener("click", async ()=>{
-          const act = btn.getAttribute("data-act");
-          const id = btn.getAttribute("data-id");
-          console.log(`버튼 클릭: ${act}, ID: ${id}`);
-          
-          try {
-            if(act==="edit"){ 
-              editingSlotIds.add(id); 
-              saveEditingState(); // ✅ 저장
-              const s = slotsCache.find(x=>x.id===id); 
-              if(s) ensureSlotDraft(s); 
-              renderSlotsPage(); 
-              toast("수정 모드","저장/취소 가능"); 
-              return; 
-            }
-            if(act==="cancel"){ 
-              editingSlotIds.delete(id); 
-              saveEditingState(); // ✅ 저장
-              slotDrafts.delete(id); 
-              renderSlotsPage(); 
-              return; 
-            }
-            if(act==="save")    { 
-              console.log('저장 함수 호출 시작!'); 
-              await saveSlotInline(id); 
-              console.log('저장 함수 호출 끝!');
-              return; 
-            }
-            if(act==="open")    { openSlot(id); return; }
-            if(act==="hide")    { hideSlot(id); return; }
-            if(act==="withdraw"){ withdrawSlot(id); return; }
-            if(act==="extend")  { extendSlotUI(id); return; }
-          } catch(error) {
-            console.error('❌ 버튼 핸들러 에러:', error);
-            toast("오류 발생", error.message);
-          }
-        });
-      });
+      // ✅ 이벤트 위임: tbody에 한 번만 등록 (페이지 이동해도 유지)
+      tb.removeEventListener("click", handleSlotButtons); // 기존 제거
+      tb.addEventListener("click", handleSlotButtons); // 새로 등록
+    }
+    
+    // ✅ 버튼 클릭 핸들러 (이벤트 위임)
+    async function handleSlotButtons(e){
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      
+      const act = btn.getAttribute("data-act");
+      const id = btn.getAttribute("data-id");
+      console.log(`버튼 클릭: ${act}, ID: ${id}`);
+      
+      try {
+        if(act==="edit"){ 
+          editingSlotIds.add(id); 
+          saveEditingState();
+          const s = slotsCache.find(x=>x.id===id); 
+          if(s) ensureSlotDraft(s); 
+          renderSlotsPage(); 
+          toast("수정 모드","저장/취소 가능"); 
+          return; 
+        }
+        if(act==="cancel"){ 
+          editingSlotIds.delete(id); 
+          saveEditingState();
+          slotDrafts.delete(id); 
+          renderSlotsPage(); 
+          return; 
+        }
+        if(act==="save")    { 
+          console.log('저장 함수 호출 시작!'); 
+          await saveSlotInline(id); 
+          console.log('저장 함수 호출 끝!');
+          return; 
+        }
+        if(act==="open")    { openSlot(id); return; }
+        if(act==="hide")    { hideSlot(id); return; }
+        if(act==="withdraw"){ withdrawSlot(id); return; }
+        if(act==="extend")  { extendSlotUI(id); return; }
+      } catch(error) {
+        console.error('❌ 버튼 핸들러 에러:', error);
+        toast("오류 발생", error.message);
+      }
     }
 
     async function saveSlotInline(id){
