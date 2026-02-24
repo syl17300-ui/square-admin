@@ -1912,14 +1912,6 @@
       console.log('   - kw2:', kw2);
       console.log('   - kw3:', kw3);
       
-      // ✅ "Attribute value" 같은 이상한 값 필터링
-      const finalKw2 = (kw2 === "Attribute value" || kw2 === "Tag value") ? "Not applied" : kw2;
-      const finalKw3 = (kw3 === "Attribute value" || kw3 === "Tag value") ? "Not applied" : kw3;
-      
-      console.log('🔵 필터링 후:');
-      console.log('   - finalKw2:', finalKw2);
-      console.log('   - finalKw3:', finalKw3);
-      
       console.log('🔵 변수 할당 전 - d.link:', d.link);
       console.log('🔵 d.link 타입:', typeof d.link);
       console.log('🔵 d.link 길이:', d.link ? d.link.length : 'null/undefined');
@@ -1951,8 +1943,8 @@
       // ✅ DB 저장 (조합키워드 포함!)
       const payload = { 
         keyword: kw, 
-        keyword2: finalKw2,
-        keyword3: finalKw3,
+        keyword2: kw2,
+        keyword3: kw3,
         link, 
         catalog_link: wonbu ? catalogLink : "", 
         memo, 
@@ -1968,19 +1960,14 @@
       
       let error;
       try {
-        // ✅ 30초 타임아웃으로 증가
-        console.log('🔵 Supabase update 호출...');
-        const savePromise = sb.from("slots").update(payload).eq("id", id);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('DB 저장 타임아웃 (30초)')), 30000)
-        );
+        console.log('🔵 Supabase update 호출 (타임아웃 없음)...');
         
-        console.log('🔵 Promise.race 대기 중...');
-        const result = await Promise.race([savePromise, timeoutPromise]);
-        console.log('🔵 Promise.race 완료!');
+        // ✅ 타임아웃 제거하고 실제 에러 확인
+        const result = await sb.from("slots").update(payload).eq("id", id);
         error = result.error;
         
-        console.log('🔵 DB 저장 완료, result:', result);
+        console.log('🔵 DB 저장 완료!');
+        console.log('🔵 result:', result);
       } catch(err) {
         console.error('❌ DB 저장 중 예외:', err);
         toast("저장 실패", err.message || "DB 연결 오류");
@@ -1995,7 +1982,7 @@
       }
       
       console.log('🔵 로그 이벤트');
-      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${finalKw2}, kw3=${finalKw3}`);
+      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}`);
       
       console.log('🔵 토스트 표시');
       toast("저장 완료");
