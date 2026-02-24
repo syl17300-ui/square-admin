@@ -1474,6 +1474,20 @@
     async function afterLoginBootstrap(){
       await fetchUsersIfAdmin();
       await fetchSlots();
+      
+      // ✅ 1분마다 자동 세션 갱신 (세션 만료 방지)
+      setInterval(async () => {
+        try {
+          const { data, error } = await sb.auth.refreshSession();
+          if(error){
+            console.warn('⚠️ 백그라운드 세션 갱신 실패:', error.message);
+          } else {
+            console.log('✅ 백그라운드 세션 갱신 성공');
+          }
+        } catch(e) {
+          console.warn('⚠️ 백그라운드 세션 갱신 예외:', e.message);
+        }
+      }, 60 * 1000); // 1분 = 60초 * 1000ms
     }
 
     /***********************
@@ -1955,10 +1969,10 @@
       
       let error;
       try {
-        // ✅ 10초 타임아웃 추가
+        // ✅ 30초 타임아웃으로 증가
         const savePromise = sb.from("slots").update(payload).eq("id", id);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('DB 저장 타임아웃 (10초)')), 10000)
+          setTimeout(() => reject(new Error('DB 저장 타임아웃 (30초)')), 30000)
         );
         
         const result = await Promise.race([savePromise, timeoutPromise]);
