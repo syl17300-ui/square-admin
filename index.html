@@ -1908,6 +1908,18 @@
       const kw2 = (d.kw2 || "Not applied").trim();
       const kw3 = (d.kw3 || "Not applied").trim();
       
+      console.log('🔵 조합키워드 값:');
+      console.log('   - kw2:', kw2);
+      console.log('   - kw3:', kw3);
+      
+      // ✅ "Attribute value" 같은 이상한 값 필터링
+      const finalKw2 = (kw2 === "Attribute value" || kw2 === "Tag value") ? "Not applied" : kw2;
+      const finalKw3 = (kw3 === "Attribute value" || kw3 === "Tag value") ? "Not applied" : kw3;
+      
+      console.log('🔵 필터링 후:');
+      console.log('   - finalKw2:', finalKw2);
+      console.log('   - finalKw3:', finalKw3);
+      
       console.log('🔵 변수 할당 전 - d.link:', d.link);
       console.log('🔵 d.link 타입:', typeof d.link);
       console.log('🔵 d.link 길이:', d.link ? d.link.length : 'null/undefined');
@@ -1939,8 +1951,8 @@
       // ✅ DB 저장 (조합키워드 포함!)
       const payload = { 
         keyword: kw, 
-        keyword2: kw2,
-        keyword3: kw3,
+        keyword2: finalKw2,
+        keyword3: finalKw3,
         link, 
         catalog_link: wonbu ? catalogLink : "", 
         memo, 
@@ -1983,7 +1995,7 @@
       }
       
       console.log('🔵 로그 이벤트');
-      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${kw2}, kw3=${kw3}`);
+      logEvent(`슬롯 저장: no=${s.no}, kw=${kw}, kw2=${finalKw2}, kw3=${finalKw3}`);
       
       console.log('🔵 토스트 표시');
       toast("저장 완료");
