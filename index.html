@@ -1949,17 +1949,23 @@
         hidden_by_admin: false, 
         withdraw_pending: false 
       };
-      console.log('🔵 DB 저장 시작, payload:', payload);
+      console.log('🔵 DB 저장 시작');
+      console.log('   - ID:', id);
+      console.log('   - ID 타입:', typeof id);
+      console.log('   - payload:', JSON.stringify(payload, null, 2));
       
       let error;
       try {
         // ✅ 30초 타임아웃으로 증가
+        console.log('🔵 Supabase update 호출...');
         const savePromise = sb.from("slots").update(payload).eq("id", id);
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('DB 저장 타임아웃 (30초)')), 30000)
         );
         
+        console.log('🔵 Promise.race 대기 중...');
         const result = await Promise.race([savePromise, timeoutPromise]);
+        console.log('🔵 Promise.race 완료!');
         error = result.error;
         
         console.log('🔵 DB 저장 완료, result:', result);
