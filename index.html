@@ -2323,10 +2323,15 @@
         // 2) 비밀번호 변경 (입력한 경우에만)
         if(pwNew){
           const apiKey = FIREBASE_CONFIG.apiKey;
+          // 먼저 해당 유저의 idToken을 관리자 권한으로 가져올 수 없으므로
+          // Firebase Admin이 필요한 작업 → 대신 현재 로그인 유저 토큰으로 update 시도
+          const currentUser = fbAuth.currentUser;
+          if(!currentUser){ toast("비밀번호 변경 실패", "로그인 세션이 없습니다."); return; }
+          const idToken = await currentUser.getIdToken(true);
           const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${apiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ localId: userId, password: pwNew, returnSecureToken: false })
+            body: JSON.stringify({ idToken, password: pwNew, returnSecureToken: false })
           });
           const data = await res.json();
           if(data.error){ toast("비밀번호 변경 실패", data.error.message); return; }
@@ -2404,8 +2409,8 @@
             <td class="muted">${escapeHtml(u.company_name||"")}</td>
             <td class="muted" style="font-size:12px">••••••</td>
             ${creatorCell}
-            <td><button class="btn mini btnGreen" data-uact="edit" data-uid="${escapeHtml(u.user_id)}">수정</button></td>
-            <td><button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}">삭제</button></td>
+            <td>${isAdminLike(profile) ? `<button class="btn mini btnGreen" data-uact="edit" data-uid="${escapeHtml(u.user_id)}">수정</button>` : `<span class="muted">-</span>`}</td>
+            <td>${isAdminLike(profile) ? `<button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}">삭제</button>` : `<span class="muted">-</span>`}</td>
           `;
         } else {
           const d = ensureUserDraft(u);
