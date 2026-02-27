@@ -977,7 +977,7 @@
                 <tbody id="userTbody"></tbody>
               </table>
             </div>
-            <div class="hint" style="margin-top:14px">※ 비밀번호는 최소 6자부터 생성 가능합니다.</div>
+            <div class="hint" style="margin-top:14px">※ 이 페이지는 Supabase Auth + profiles 테이블 기반입니다. (호환: app_users 있으면 자동 fallback)</div>
           </div>
         </div>
       </div>
@@ -2295,7 +2295,7 @@
 
     function ensureUserDraft(u){
       if(!userDrafts.has(u.user_id)){
-        userDrafts.set(u.user_id, { loginNew: u.login_id, companyNew: u.company_name || "", roleNew: u.role || "ADVERTISER" });
+        userDrafts.set(u.user_id, { loginNew: u.login_id, companyNew: u.company_name || "", roleNew: u.role || "ADVERTISER", pwNew: "" });
       }
       return userDrafts.get(u.user_id);
     }
@@ -2307,16 +2307,33 @@
       if(u.login_id === MASTER_ID){ toast("불가","마스터 계정은 수정 불가"); return; }
       const d = userDrafts.get(userId);
       if(!d){ toast("수정값 없음"); return; }
-      const loginNew = (d.loginNew || "").trim(), companyNew = (d.companyNew || "").trim(), roleNew = (d.roleNew || "").trim();
+      const loginNew  = (d.loginNew  || "").trim();
+      const companyNew = (d.companyNew || "").trim();
+      const roleNew   = (d.roleNew   || "").trim();
+      const pwNew     = (d.pwNew     || "").trim();
       if(!loginNew || loginNew.length < 2){ toast("아이디 오류","2글자 이상"); return; }
       if(!companyNew){ toast("업체명 필수"); return; }
       if(!ROLE_LABEL[roleNew]){ toast("역할 오류"); return; }
       if(loginNew === MASTER_ID){ toast("불가","마스터 아이디는 사용 불가"); return; }
       if(roleNew === "ADMIN" && !isMasterAccount(profile)){ toast("권한 없음","관리자(ADMIN) 변경은 마스터만 가능"); return; }
+      if(pwNew && pwNew.length < 6){ toast("비밀번호 오류","6자리 이상 입력하세요"); return; }
       try {
+        // 1) Firestore 프로필 업데이트
         await fbDb.collection("profiles").doc(userId).update({ login_id: loginNew, company_name: companyNew, role: roleNew });
+        // 2) 비밀번호 변경 (입력한 경우에만)
+        if(pwNew){
+          const apiKey = FIREBASE_CONFIG.apiKey;
+          const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ localId: userId, password: pwNew, returnSecureToken: false })
+          });
+          const data = await res.json();
+          if(data.error){ toast("비밀번호 변경 실패", data.error.message); return; }
+        }
       } catch(e){ console.error(e); toast("수정 실패", e.message); return; }
-      logEvent(`계정 수정: ${u.login_id} → ${loginNew}`); toast("수정 저장 완료",`${companyNew}(${loginNew})`);
+      logEvent(`계정 수정: ${u.login_id} → ${loginNew}${pwNew ? " (비번변경)" : ""}`);
+      toast("수정 저장 완료", `${companyNew}(${loginNew})${pwNew ? " + 비밀번호 변경됨" : ""}`);
       editingUserIds.delete(userId); userDrafts.delete(userId);
       await fetchUsersIfAdmin(); renderUsers(); renderAssign();
       if(activePage==="dash") renderDash();
@@ -2385,7 +2402,7 @@
             <td style="font-weight:700;font-size:13px">${escapeHtml(u.login_id)}</td>
             <td><span class="tag ${roleColor}">${escapeHtml(ROLE_LABEL[u.role] || u.role)}</span></td>
             <td class="muted">${escapeHtml(u.company_name||"")}</td>
-            <td class="muted">-</td>
+            <td class="muted" style="font-size:12px">••••••</td>
             ${creatorCell}
             <td><button class="btn mini btnGreen" data-uact="edit" data-uid="${escapeHtml(u.user_id)}">수정</button></td>
             <td><button class="btn mini btnRed" data-del="${escapeHtml(u.user_id)}">삭제</button></td>
@@ -2410,7 +2427,7 @@
               </select>
             </td>
             <td><input class="tInput" data-uf="companyNew" data-uid="${escapeHtml(u.user_id)}" value="${escapeHtml(d.companyNew)}" placeholder="업체명" /></td>
-            <td class="muted">-</td>
+            <td><input class="tInput" type="password" data-uf="pwNew" data-uid="${escapeHtml(u.user_id)}" value="" placeholder="새 비밀번호 (변경 시만 입력)" /></td>
             ${creatorCell}
             <td>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2427,11 +2444,12 @@
       tb.querySelectorAll('[data-uf]').forEach(el=>{
         const uid = el.getAttribute("data-uid"), f = el.getAttribute("data-uf");
         const handler = ()=>{
-          if(!userDrafts.has(uid)) userDrafts.set(uid, {loginNew:"",companyNew:"",roleNew:"ADVERTISER"});
+          if(!userDrafts.has(uid)) userDrafts.set(uid, {loginNew:"",companyNew:"",roleNew:"ADVERTISER",pwNew:""});
           const d = userDrafts.get(uid);
-          if(f==="loginNew") d.loginNew = el.value;
+          if(f==="loginNew")  d.loginNew  = el.value;
           if(f==="companyNew") d.companyNew = el.value;
-          if(f==="roleNew") d.roleNew = el.value;
+          if(f==="roleNew")   d.roleNew   = el.value;
+          if(f==="pwNew")     d.pwNew     = el.value;
         };
         el.addEventListener("input", handler); el.addEventListener("change", handler);
       });
