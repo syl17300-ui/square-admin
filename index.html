@@ -1657,7 +1657,7 @@
       // ✅ 일괄 작업 버튼 렌더링
       const bulkBar = document.getElementById("slotBulkBar");
       if(isAdminLike(profile)){
-        const checkableSlots = rows.filter(s => !s.expired && !s.withdrawPending && (s.opened || s.saved));
+        const checkableSlots = rows.filter(s => !s.expired && !s.withdrawPending);
         if(checkableSlots.length > 0){
           bulkBar.innerHTML = `
             <button class="btn mini" onclick="selectAllSlots()">전체선택</button>
@@ -1777,7 +1777,7 @@
           : `<div style="font-weight:700;font-size:14px;line-height:1.4">${escapeHtml(loginId)}</div>`;
 
         // ✅ 체크박스 추가
-        const canCheck = isAdminLike(profile) && !s.expired && !s.withdrawPending && (s.opened || s.saved);
+        const canCheck = isAdminLike(profile) && !s.expired && !s.withdrawPending;
         const checkCell = canCheck 
           ? `<input type="checkbox" class="chk" data-slot-id="${escapeHtml(s.id)}" ${selectedSlotIds.has(s.id) ? "checked" : ""} />`
           : `<span class="muted">-</span>`;
@@ -2130,7 +2130,7 @@
         });
       }
 
-      const checkable = rows.filter(s => !s.expired && !s.withdrawPending && (s.opened || s.saved));
+      const checkable = rows.filter(s => !s.expired && !s.withdrawPending);
       checkable.forEach(s => selectedSlotIds.add(s.id));
       renderSlotsPage();
       toast("전체 선택", `${checkable.length}개 슬롯 선택됨`);
@@ -2164,7 +2164,7 @@
         });
       }
 
-      const checkable = rows.filter(s => !s.expired && !s.withdrawPending && (s.opened || s.saved));
+      const checkable = rows.filter(s => !s.expired && !s.withdrawPending);
       checkable.forEach(s => {
         if(selectedSlotIds.has(s.id)) selectedSlotIds.delete(s.id);
         else selectedSlotIds.add(s.id);
