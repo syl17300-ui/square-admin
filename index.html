@@ -2246,43 +2246,22 @@
       const role         = document.getElementById("u_role").value;
       const company_name = document.getElementById("u_company").value.trim();
       if(!login_id || login_id.length < 2){ toast("아이디를 입력하세요"); return; }
-      if(!password || password.length < 2){ toast("비밀번호를 입력하세요"); return; }
+      if(!password || password.length < 6){ toast("비밀번호 오류","6자리 이상 입력하세요"); return; }
       if(!company_name){ toast("업체명은 필수입니다"); return; }
       if(login_id === MASTER_ID){ toast("생성 불가","마스터 계정 아이디는 사용할 수 없습니다."); return; }
       if(role === "ADMIN" && !isMasterAccount(profile)){ toast("권한 없음","관리자(ADMIN) 계정 생성은 마스터 계정만 가능합니다."); return; }
-
-      const email = `${login_id}@${EMAIL_DOMAIN}`;
       try {
-        // 1) Firebase REST API로 계정 생성 (현재 로그인 세션 유지하면서 신규 계정 생성)
-        const apiKey = FIREBASE_CONFIG.apiKey;
-        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, returnSecureToken: false })
+        const createFn = fbFuncs.httpsCallable("adminCreateUser");
+        const result = await createFn({ login_id, password, role, company_name,
+          created_by: profile.login_id,
+          created_by_name: profile.company_name || profile.login_id
         });
-        const data = await res.json();
-        if(data.error){ toast("계정 생성 실패", data.error.message); return; }
-
-        const newUid = data.localId;
-
-        // 2) Firestore profiles 문서 생성
-        await fbDb.collection("profiles").doc(newUid).set({
-          user_id:         newUid,
-          login_id:        login_id,
-          email:           email,
-          role:            role || "ADVERTISER",
-          company_name:    company_name,
-          created_by:      profile.login_id,
-          created_by_name: profile.company_name || profile.login_id,
-          created_at:      new Date().toISOString()
-        });
-
+        if(result.data?.error){ toast("계정 생성 실패", result.data.error); return; }
         logEvent(`계정 생성: ${login_id} (${role}) 업체명=${company_name}`);
         toast("계정 생성 완료", `${company_name}(${login_id}) / ${ROLE_LABEL[role] || role}`);
         document.getElementById("u_id").value = "";
         document.getElementById("u_pw").value = "";
         document.getElementById("u_company").value = "";
-
         setTimeout(async () => {
           await fetchUsersIfAdmin();
           await fetchSlots();
@@ -2343,9 +2322,10 @@
       const ok = confirm(`정말 삭제할까요?\n\n${who}\n\n※ profiles + Auth 계정이 함께 삭제됩니다. (복구 불가)`);
       if(!ok) return;
       try {
-        // Firestore profiles 문서 삭제 (Auth 계정은 보안상 REST API로 직접 삭제 불가 → Firestore만 삭제)
-        await fbDb.collection("profiles").doc(userId).delete();
-        toast("삭제 완료", who + "\n※ Firebase Auth 계정은 Console에서 별도 삭제 필요");
+        const deleteFn = fbFuncs.httpsCallable("adminDeleteUser");
+        const result = await deleteFn({ user_id: userId });
+        if(result.data?.error){ toast("삭제 실패", result.data.error); return; }
+        toast("삭제 완료", who);
         logEvent(`계정 삭제: ${who}`);
         await fetchUsersIfAdmin(); await fetchSlots(); renderUsers(); renderAssign();
         if(activePage==="dash") renderDash();
